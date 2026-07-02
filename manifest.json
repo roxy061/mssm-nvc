@@ -1,0 +1,15 @@
+{
+  "name": "Mush-Up NVC",
+  "short_name": "MSSM",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#4caf50",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

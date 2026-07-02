@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>MSSM Intelligence Lab - Mush-up NVC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* =========================================
+            1. Variables & Global Styles (ปรับธีมรองรับทั้งโหมดขาวและโหมดมืดล้ำอนาคต)
+            ========================================= */
+        :root {
+            /* --- Light Mode (ธีมสีขาวสะอาดตาแบบมีอนาคต) --- */
+            --primary: #2ecc71;
+            --primary-dark: #27ae60;
+            --primary-light: rgba(46, 204, 113, 0.08);
+            --accent: #e67e22;
+            --accent-hover: #d35400;
+            --accent-glow: rgba(230, 126, 34, 0.3);
+            --text-main: #2c3e50;
+            --text-sub: #7f8c8d;
+            --bg-body: #f5f7fa;
+            --bg-white: rgba(255, 255, 255, 0.85);
+            --border-card: rgba(46, 204, 113, 0.2);
+            --radius-main: 24px;
+            --shadow-soft: 0 10px 30px rgba(46, 204, 113, 0.05), inset 0 0 15px rgba(46, 204, 113, 0.02);
+            --shadow-hover: 0 15px 35px rgba(46, 204, 113, 0.15), inset 0 0 20px rgba(46, 204, 113, 0.05);
+            --sidebar-width: 280px;
+            --glass-border: rgba(46, 204, 113, 0.25);
+            --tech-grid: linear-gradient(rgba(46, 204, 113, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(46, 204, 113, 0.03) 1px, transparent 1px);
+        }
+
+        body.dark-mode {
+            /* --- Dark Mode (ธีมมืดเรืองแสงไซเบอร์) --- */
+            --primary: #00ff66;
+            --primary-dark: #00aa44;
+            --primary-light: rgba(0, 255, 102, 0.08);
+            --accent: #ff9900;
+            --accent-hover: #ff6600;
+            --accent-glow: rgba(255, 153, 0, 0.4);
+            --text-main: #e2e8f0;
+            --text-sub: #94a3b8;
+            --bg-body: #050b14;
+            --bg-white: rgba(10, 25, 47, 0.7);
+            --border-card: rgba(0, 255, 102, 0.15);
+            --shadow-soft: 0 10px 30px rgba(0, 255, 102, 0.03), inset 0 0 15px rgba(0, 255, 102, 0.05);
+            --shadow-hover: 0 0 30px rgba(0, 255, 102, 0.2), inset 0 0 20px rgba(0, 255, 102, 0.1);
+            --glass-border: rgba(0, 255, 102, 0.2);
+            --tech-grid: linear-gradient(rgba(0, 255, 102, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 102, 0.03) 1px, transparent 1px);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Prompt', sans-serif; line-height: 1.8;
+            color: var(--text-main); background-color: var(--bg-body);
+            background-size: 30px 30px; background-image: var(--tech-grid);
+            overflow-x: hidden; padding-left: var(--sidebar-width);
+            transition: background-color 0.4s ease, color 0.4s ease, padding-left 0.35s ease;
+            cursor: default;
+        }
+
+        img, video, canvas { max-width: 100%; height: auto; display: block; }
+
+        /* --- Realistic Particle Background --- */
+        #particleCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;
+        }
+
+        #reading-progress {
+            position: fixed; top: 0; left: 0; width: 4px; height: 0%;
+            background: linear-gradient(to bottom, var(--primary), var(--accent)); z-index: 1001;
+            box-shadow: 0 0 10px var(--primary);
+            transition: height 0.1s ease-out;
+        }
+
+        .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 30px; position: relative; }
+
+        h1, h2, h3, h4 { color: var(--text-main); text-shadow: 0 0 8px rgba(255,255,255,0.05); transition: color 0.4s ease; }
+
+        section { padding: 30px 0; position: relative; }
+
+        .section-title {
+            font-size: 1.5rem; font-weight: 800; color: var(--primary);
+            margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+            position: relative; text-shadow: 0 0 10px rgba(46, 204, 113, 0.15); transition: color 0.4s ease;
+        }
+        body.dark-mode .section-title { text-shadow: 0 0 10px rgba(0, 255, 102, 0.3); }
+        .section-title::after {
+            content: ''; position: absolute; bottom: -12px; left: 0;
+            width: 70px; height: 4px; background-color: var(--accent);
+            border-radius: 4px; box-shadow: 0 0 8px var(--accent); transition: width 0.4s ease, background-color 0.4s ease;
+        }
+        .section-title:hover::after { width: 120px; }
+
+        /* =========================================
+            2. แถบเมนูด้านข้าง (Sidebar Navigation)
+            ========================================= */
+        .sidebar-nav-container {
+            position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh;
+            background-color: var(--bg-white); padding: 25px 15px;
+            display: flex; flex-direction: column; justify-content: flex-start; gap: 20px;
+            box-shadow: 4px 0 30px rgba(0,0,0,0.05), 1px 0 0 var(--border-card); z-index: 1000;
+            overflow-y: auto; backdrop-filter: blur(15px);
+            transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.4s ease, border-color 0.4s ease;
+        }
+        body.dark-mode .sidebar-nav-container {
+            background-color: rgba(6, 11, 25, 0.9); box-shadow: 4px 0 30px rgba(0,0,0,0.5), 1px 0 0 var(--border-card);
+        }
+
+        .nav-brand {
+            font-weight: 800; font-size: 1.5rem; color: var(--primary);
+            letter-spacing: 1px; text-shadow: 0 0 12px var(--primary);
+            text-align: center; margin-top: 5px; flex-shrink: 0; transition: all 0.3s ease;
+        }
+        .nav-brand:hover { transform: scale(1.05); text-shadow: 0 0 20px var(--primary); }
+
+        .nav-menus {
+            display: flex; flex-direction: column; gap: 8px;
+            scrollbar-width: none; -ms-overflow-style: none; user-select: none;
+        }
+        .nav-menus::-webkit-scrollbar { display: none; }
+
+        .nav-link {
+            text-decoration: none; color: var(--text-sub); font-weight: 600; font-size: 0.95rem;
+            padding: 10px 12px; border-radius: 12px; text-align: center; flex-shrink: 0;
+            border: 1px solid transparent;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); position: relative;
+        }
+        .nav-link::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 2px;
+            background: var(--primary); box-shadow: 0 0 8px var(--primary); transition: width 0.3s ease; transform: translateX(-50%);
+        }
+        .nav-link:hover {
+            color: var(--primary); background-color: var(--primary-light);
+            border-color: var(--border-card);
+            transform: translateY(-2px); box-shadow: 0 4px 15px rgba(46, 204, 113, 0.1);
+        }
+        body.dark-mode .nav-link:hover { box-shadow: 0 4px 15px rgba(0, 255, 102, 0.1); }
+        .nav-link:hover::after { width: 80%; }
+        .nav-link.active { background: var(--primary); color: #fff !important; font-weight: 800; box-shadow: 0 0 15px var(--primary); }
+        body.dark-mode .nav-link.active { color: #000 !important; }
+        .nav-link.active::after { display: none; }
+
+        .theme-toggle-wrapper {
+            display: flex; justify-content: center; align-items: center;
+            gap: 10px; padding: 10px; background: rgba(0,0,0,0.03);
+            border-radius: 30px; border: 1px solid var(--border-card); margin-top: auto; flex-shrink: 0; transition: background 0.4s ease;
+        }
+        body.dark-mode .theme-toggle-wrapper { background: rgba(255,255,255,0.03); }
+        .theme-label { font-size: 0.90rem; font-weight: 700; color: var(--text-main); }
+        .theme-switch { position: relative; display: inline-block; width: 55px; height: 30px; }
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+        .theme-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.05); border: 1px solid var(--border-card); transition: .4s; border-radius: 34px;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 6px; font-size: 0.75rem; color: #fff;
+        }
+        body.dark-mode .theme-slider { background-color: #1e293b; }
+        .theme-slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px;
+            background-color: var(--primary); box-shadow: 0 0 8px var(--primary); transition: .4s; border-radius: 50%;
+        }
+        input:checked + .theme-slider:before { transform: translateX(25px); background-color: var(--primary); }
+
+        /* =========================================
+            3. ส่วนหัว (Hero Section)
+            ========================================= */
+        header {
+            background: var(--bg-white);
+            color: var(--text-main); padding: 60px 15px; text-align: center;
+            position: relative; overflow: hidden; margin-bottom: 30px;
+            border: 1px solid var(--border-card);
+            box-shadow: var(--shadow-soft);
+            border-radius: 0 0 30px 30px;
+            backdrop-filter: blur(12px);
+            transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+        body.dark-mode header {
+            background: linear-gradient(135deg, #0b192c 0%, #050b14 100%);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 30px rgba(0, 255, 102, 0.05);
+        }
+        header h1 { font-size: 1.8rem; font-weight: 800; text-shadow: 0 0 10px rgba(46, 204, 113, 0.1); margin-bottom: 10px; }
+        body.dark-mode header h1 { color: #ffffff; text-shadow: 0 0 15px var(--primary); }
+        header p { font-size: 0.95rem; font-weight: 400; color: var(--text-sub); }
+
+        .main-content { max-width: 1300px; margin: 0 auto; width: 100%; padding: 0 15px; }
+
+        .grid-layout { display: grid; grid-template-columns: 1fr 1.8fr; gap: 20px; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        .glass-panel {
+            background: var(--bg-white); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-card); border-radius: 24px;
+            padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow-soft);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .glass-panel:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: var(--shadow-hover); }
+
+        /* Form & Inputs */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        @media(max-width: 425px) { .form-grid { grid-template-columns: 1fr; gap: 8px; } }
+
+        .input-box {
+            width: 100%; padding: 10px 15px; border-radius: 30px;
+            border: 1px solid var(--border-card); background: rgba(0, 0, 0, 0.02); color: var(--text-main);
+            font-family: inherit; outline: none; transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
+        }
+        body.dark-mode .input-box { background: rgba(5, 11, 20, 0.6); }
+        .input-box:focus { border-color: var(--primary); box-shadow: 0 0 12px var(--primary-light); }
+        body.dark-mode .input-box:focus { box-shadow: 0 0 12px var(--primary); }
+
+        .weight-list { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+        .weight-item {
+            background: rgba(46, 204, 113, 0.02); border: 1px solid rgba(46, 204, 113, 0.05); border-radius: 18px; padding: 10px 15px;
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;
+            transition: background-color 0.4s, border-color 0.4s;
+        }
+        body.dark-mode .weight-item { background: rgba(0, 255, 102, 0.02); border-color: rgba(0, 255, 102, 0.05); }
+        
+        .weight-item-control {
+            display: flex; align-items: center; gap: 12px; justify-content: flex-end; width: 120px;
+        }
+        .weight-item input {
+            width: 75px; text-align: center; border-radius: 30px;
+            border: 1px solid var(--border-card); padding: 6px 10px; font-weight: 700;
+            font-family: 'Courier New', Courier, monospace; font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9); color: var(--primary-dark); outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        body.dark-mode .weight-item input { background: rgba(5, 11, 20, 0.8); color: var(--primary); }
+        .weight-item input:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-light); }
+        body.dark-mode .weight-item input:focus { box-shadow: 0 0 10px var(--primary); }
+        .weight-unit { font-weight: 700; min-width: 15px; text-align: right; color: var(--text-sub); }
+
+        /* การจัดแต่งปุ่มคำนวณและปุ่มรีเซ็ตแบบกระจายกึ่งกลาง */
+        .action-button-group {
+            display: grid;
+            grid-template-columns: 1.8fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        @media(max-width: 425px) { .action-button-group { grid-template-columns: 1fr; gap: 8px; } }
+
+        .calc-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); color: white;
+            border: none; padding: 14px; border-radius: 30px; width: 100%; font-size: 1.1rem;
+            font-weight: 800; cursor: pointer; box-shadow: 0 0 15px var(--accent-glow);
+            letter-spacing: 0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.3s, box-shadow 0.3s, filter 0.3s;
+        }
+        .calc-btn:hover { transform: scale(1.02); box-shadow: 0 0 25px var(--accent-glow); filter: brightness(1.1); }
+        
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.1); color: var(--text-main);
+            border: 1px solid var(--border-card); padding: 14px; border-radius: 30px; width: 100%; font-size: 1rem;
+            font-weight: 700; cursor: pointer; transition: transform 0.3s, background-color 0.3s, border-color 0.3s;
+        }
+        .reset-btn:hover { background-color: rgba(231, 76, 60, 0.15); border-color: #e74c3c; color: #e74c3c; transform: scale(1.02); }
+
+        .alert-msg { padding: 8px; background: rgba(230, 126, 34, 0.1); border: 1px solid var(--accent); border-left: 4px solid var(--accent); border-radius: 8px; font-size: 0.82rem; color: var(--accent-hover); font-weight: 600; margin-top: 8px; display: none; }
+
+        /* Dashboard Podium */
+        .podium-outer { background: var(--bg-white); border-radius: 24px; padding: 20px; box-shadow: var(--shadow-soft); border: 1px solid var(--border-card); }
+        .podium-title { font-size: 1.15rem; font-weight: 700; text-align: center; margin-bottom: 12px; border: none; }
+        .podium-card-list { display: flex; flex-direction: column; gap: 10px; }
+        .podium-card {
+            display: flex; align-items: center; justify-content: space-between; padding: 12px 15px;
+            border-radius: 18px; background: rgba(0, 0, 0, 0.02); border: 1px solid rgba(0,0,0,0.03);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); position: relative; overflow: hidden;
+        }
+        body.dark-mode .podium-card { background: rgba(5, 11, 20, 0.4); border-color: rgba(255,255,255,0.05); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .podium-card.winner {
+            border-color: var(--primary); box-shadow: 0 0 15px rgba(46, 204, 113, 0.1);
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0%, rgba(46, 204, 113, 0.05) 100%);
+        }
+        body.dark-mode .podium-card.winner { box-shadow: 0 0 15px rgba(0, 255, 102, 0.15); background: linear-gradient(90deg, rgba(5, 11, 20, 0.6) 0%, rgba(0, 255, 102, 0.05) 100%); }
+        .podium-card.winner::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: conic-gradient(transparent, var(--primary), transparent 30%);
+            animation: rotateGlow 4s linear infinite; z-index: -1; opacity: 0.3;
+        }
+        @keyframes rotateGlow { 100% { transform: rotate(360deg); } }
+
+        .rank-medal { font-size: 1.25rem; font-weight: 800; white-space: nowrap; }
+        .rank-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-card); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .rank-info h4 { font-size: 0.95rem; margin-bottom: 0px; }
+        .rank-score { font-size: 1.1rem; font-weight: 900; color: var(--accent); font-family: 'Courier New', Courier, monospace; text-shadow: 0 0 5px var(--accent-glow); }
+        .star-rating { color: var(--accent); font-size: 0.75rem; display: block; }
+
+        /* ตารางสรุปคะแนน */
+        .table-wrapper { overflow-x: auto; border-radius: 18px; border: 1px solid var(--border-card); max-width: 100%; }
+        .data-table { width: 100%; min-width: 450px; border-collapse: collapse; text-align: left; font-size: 0.85rem; background: transparent; }
+        .data-table th, .data-table td { padding: 12px 6px; border-bottom: 1px solid rgba(46, 204, 113, 0.1); color: var(--text-main); }
+        body.dark-mode .data-table th, body.dark-mode .data-table td { border-bottom-color: rgba(0, 255, 102, 0.1); }
+        .data-table th { background: rgba(46, 204, 113, 0.1); color: var(--primary-dark); font-weight: 700; text-align: center; border-bottom: 2px solid var(--primary); }
+        body.dark-mode .data-table th { background: rgba(0, 255, 102, 0.1); color: var(--primary); }
+        .data-table td { text-align: center; }
+        .data-table td:first-child { text-align: left; font-weight: 700; }
+        .data-table tr:hover { background: var(--primary-light); }
+
+        /* กราฟจัดขนาด */
+        .charts-container { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 768px) { .charts-container { grid-template-columns: 1fr 1fr; } }
+        .chart-box { background: rgba(255, 255, 255, 0.4); padding: 10px; border-radius: 18px; height: 220px; border: 1px solid var(--border-card); }
+        body.dark-mode .chart-box { background: rgba(5, 11, 20, 0.4); }
+
+        #back-to-top {
+            position: fixed; bottom: 20px; right: 20px; width: 45px; height: 45px;
+            background: var(--bg-white); color: var(--primary-dark); border: 1px solid var(--border-card); border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; text-decoration: none;
+            font-size: 1.2rem; box-shadow: 0 0 15px var(--primary-light); z-index: 999;
+            backdrop-filter: blur(5px); transition: transform 0.4s, background 0.4s, box-shadow 0.4s, color 0.4s;
+        }
+        body.dark-mode #back-to-top { background: rgba(6, 11, 25, 0.8); color: var(--primary); }
+        #back-to-top:hover { transform: rotate(360deg) scale(1.1); background: var(--primary); color: #fff; box-shadow: 0 0 20px var(--primary); }
+        body.dark-mode #back-to-top:hover { color: #000; }
+
+        .floating-element { animation: slowFloat 6s ease-in-out infinite; }
+        @keyframes slowFloat { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-5px); } }
+        .floating-element:hover { animation-play-state: paused; }
+
+        /* การปรับแต่ง Responsive มือถือ */
+        @media (max-width: 992px) {
+            body { padding-left: 0; }
+            .sidebar-nav-container {
+                position: fixed; top: 0; width: 100%; height: auto; max-height: 100vh;
+                padding: 8px 10px; display: flex; flex-direction: row; justify-content: space-between; align-items: center;
+                gap: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.05); border-right: none; border-bottom: 1px solid var(--border-card); z-index: 1000;
+                overflow-y: auto; backdrop-filter: blur(10px); transition: transform 0.3s ease-in-out;
+            }
+            body.dark-mode .sidebar-nav-container { background-color: rgba(6, 11, 25, 0.95); box-shadow: 0 4px 25px rgba(0,0,0,0.5); }
+            .sidebar-nav-container.nav-hidden-auto { transform: translateY(-100%); }
+
+            .nav-brand { font-size: 0.95rem; margin-top: 0; }
+            .nav-menus {
+                display: flex; flex-direction: row; align-items: center; gap: 10px;
+                overflow-x: auto; max-width: 50%; padding-bottom: 2px; scrollbar-width: none;
+                -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+            }
+            .nav-menus::-webkit-scrollbar { display: none; }
+            .nav-link { font-size: 0.75rem; white-space: nowrap; padding: 4px 6px; border-radius: 8px; }
+            .theme-toggle-wrapper { padding: 4px 6px; gap: 5px; margin-top: 0; }
+            .theme-switch { width: 45px; height: 24px; }
+            .theme-slider:before { width: 14px; height: 14px; left: 4px; bottom: 4px; }
+            input:checked + .theme-slider:before { transform: translateX(21px); }
+
+            header { margin-top: 45px; padding: 30px 10px; }
+            header h1 { font-size: 1.4rem; }
+
+            section { padding: 15px 0; }
+            .glass-panel { padding: 15px; border-radius: 18px; margin-bottom: 15px; }
+            .section-title { font-size: 1.15rem; margin-bottom: 12px; }
+            .input-box { padding: 10px 15px; margin-bottom: 10px; }
+
+            .form-grid { grid-template-columns: 1fr; gap: 6px; }
+            .weight-item { padding: 8px 12px; font-size: 0.78rem; border-radius: 15px; }
+            .weight-item-control { width: 100px; gap: 8px; }
+            .weight-item input { width: 55px; padding: 4px 6px; }
+            .calc-btn { padding: 12px; font-size: 1rem; margin-top: 10px; }
+
+            .podium-card { padding: 10px 12px; border-radius: 15px; gap: 10px; }
+            .rank-img { width: 32px; height: 32px; }
+            .rank-medal { font-size: 1.1rem; }
+            .rank-info h4 { font-size: 0.82rem; }
+            .star-rating { font-size: 0.65rem; }
+            .rank-score { font-size: 0.95rem; }
+
+            .chart-box { height: 160px; }
+            #back-to-top { width: 40px; height: 40px; font-size: 1rem; bottom: 15px; right: 15px; }
+        }
+
+        .badge-medal { font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <div id="reading-progress"></div>
+    <a href="#top" id="back-to-top" title="กลับขึ้นด้านบน"><i class="fas fa-leaf"></i></a>
+    <canvas id="particleCanvas"></canvas>
+
+    <div class="sidebar-nav-container" id="stickyNav">
+        <div class="nav-brand"><i class="fas fa-flask-vial"></i> MSSM Lab</div>
+        <div class="nav-menus">
+            <a href="index.html#header-section" class="nav-link">หน้าแรก</a>
+            <a href="index.html#product-section" class="nav-link">ข้อมูลของเห็ด</a>
+            <a href="index.html#graph-section" class="nav-link">การตัดสินใจ</a>
+            <a href="index.html#contact-section" class="nav-link">ติดต่อ</a>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSfv9wysUClz6pVb4c6e1fMVbXUn-a0MU5Yj9ui9HSoSLch2Jw/viewform" target="_blank" class="nav-link">ความพึงพอใจ</a>
+            <a href="blank.html" class="nav-link active"><span>🍃</span> ปรับแต่งโมเดล</a>
+
+            <div class="theme-toggle-wrapper">
+                <span class="theme-label"><i class="fas fa-sun fa-xs"></i>/<i class="fas fa-moon fa-xs"></i></span>
+                <label class="theme-switch">
+                    <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                    <div class="theme-slider"></div>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header id="top">
+            <div class="container">
+                <h1>Mush-Up Smart Selection Model</h1>
+                <p>ทดลองแต่งแบบจำลอง MSSM ในแบบของคุณ (Custom Dashboard)</p>
+            </div>
+        </header>
+
+        <section class="grid-layout">
+            <div class="col-inputs">
+                <div class="glass-panel floating-element">
+                    <h2 class="section-title"><i class="fas fa-edit"></i> ส่วนที่ 1: ข้อมูลนำเข้า (Input)</h2>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>จำนวนก้อนเพาะ (ก้อน)</label>
+                            <input type="number" id="inGons" class="input-box" value="100">
+                        </div>
+                        <div class="input-group">
+                            <label>ต้นทุน/ก้อน (บาท)</label>
+                            <input type="number" id="inCostPerGon" class="input-box" value="18" step="0.5">
+                        </div>
+                    </div>
+
+                    <p style="font-weight: 800; margin-bottom: 10px;"><i class="fas fa-tags"></i> ราคาขายเห็ด (บาท/กก.)</p>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>เห็ดหูหนูดำ</label>
+                            <input type="number" id="inPriceHunu" class="input-box" value="60">
+                        </div>
+                        <div class="input-group">
+                            <label>เห็ดแครง</label>
+                            <input type="number" id="inPriceKraeng" class="input-box" value="120">
+                        </div>
+                        <div class="input-group">
+                            <label>นางฟ้าภูฐาน</label>
+                            <input type="number" id="inPriceNangfa" class="input-box" value="70">
+                        </div>
+                        <div class="input-group">
+                            <label>นางรมฮังการี</label>
+                            <input type="number" id="inPriceNangrom" class="input-box" value="75">
+                        </div>
+                    </div>
+
+                    <h2 class="section-title" style="margin-top: 25px;"><i class="fas fa-weight-hanging"></i> ส่วนที่ 5: ค่าน้ำหนักปัจจัย (Weight %)</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 10px;">ผลรวมสเกลทั้ง 6 ช่อง ต้องเท่ากับ 100%</p>
+
+                    <div class="weight-list">
+                        <div class="weight-item">
+                            <label>🌱 อัตราเดินเส้นใย</label>
+                            <div class="weight-item-control">
+                                <input type="number" id="w1" value="15" min="0" max="100" oninput="validateWeights()">
+                                <span class="weight-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="weight-item">
+                            <label>🍄 ปริมาณผลผลิต</label>
+                            <div class="weight-item-control">
+                                <input type="number" id="w2" value="25" min="0" max="100" oninput="validateWeights()">
+                                <span class="weight-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="weight-item">
+                            <label>💰 กำไรสุทธิ</label>
+                            <div class="weight-item-control">
+                                <input type="number" id="w3" value="25" min="0" max="100" oninput="validateWeights()">
+                                <span class="weight-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="weight-item">
+                            <label>📊 ค่า BCR</label>
+                            <div class="weight-item-control">
+                                <input type="number" id="w4" value="15" min="0" max="100" oninput="validateWeights()">
+                                <span class="weight-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="weight-item">
+                            <label>⏰ วันออกดอกแรก</label>
+                            <div class="weight-item-control">
+                                <input type="number" id="w5" value="10" min="0" max="100" oninput="validateWeights()">
+                                <span class="weight-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="weight-item">
+                            <label>⌛ ระยะเวลาคืนทุน</label>
+                            <div class="weight-item-control">
+                                <input type="number" id="w6" value="10" min="0" max="100" oninput="validateWeights()">
+                                <span class="weight-unit">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert-msg" id="weightAlert">⚠️ คำเตือน: ผลรวมค่าน้ำหนักต้องเท่ากับ 100%</div>
+
+                    <div class="action-button-group">
+                        <button class="calc-btn" onclick="triggerCalculation()"><i class="fas fa-wand-magic-sparkles"></i> คำนวณแบบจำลอง</button>
+                        <button class="reset-btn" onclick="resetInputsOnly()"><i class="fas fa-undo-alt"></i> รีเซ็ตค่า</button>
+                    </div>
+                </div>
+
+                <div class="glass-panel floating-element">
+                    <h2 class="section-title"><i class="fas fa-database"></i> ส่วนที่ 2: ฐานข้อมูล (Database)</h2>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>สายพันธุ์</th>
+                                    <th>เส้นใย (ซม./วัน)</th>
+                                    <th>ผลผลิต(กรัม/ก้อน)</th>
+                                    <th>วันออกดอก</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>เห็ดหูหนูดำ</td>
+                                    <td>0.42</td>
+                                    <td>247.3</td>
+                                    <td>14.1</td>
+                                </tr>
+                                <tr>
+                                    <td>เห็ดแครง</td>
+                                    <td>0.85</td>
+                                    <td>322.5</td>
+                                    <td>8.2</td>
+                                </tr>
+                                <tr>
+                                    <td>นางฟ้าภูฐาน</td>
+                                    <td>0.61</td>
+                                    <td>428.6</td>
+                                    <td>9.6</td>
+                                </tr>
+                                <tr>
+                                    <td>นางรมฮังการี</td>
+                                    <td>0.58</td>
+                                    <td>401.8</td>
+                                    <td>10.4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-results">
+                <div class="glass-panel floating-element">
+                    <h2 class="section-title"><i class="fas fa-calculator"></i> ส่วนที่ 3: ระบบการคำนวณทางเศรษฐศาสตร์</h2>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>สายพันธุ์</th>
+                                    <th>ผลผลิต (กก.)</th>
+                                    <th>ต้นทุน (฿)</th>
+                                    <th>รายได้ (฿)</th>
+                                    <th>กำไร (฿)</th>
+                                    <th>BCR</th>
+                                    <th>คืนทุน(วัน)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ecoResultsBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="podium-outer floating-element" style="margin-bottom: 25px;">
+                    <h2 class="section-title" style="border:none;"><i class="fas fa-medal"></i> ส่วนที่ 7: แผงควบคุมแสดงผล (Dashboard)</h2>
+                    <div class="podium-card-list" id="podiumList">
+                        </div>
+                </div>
+
+                <div class="glass-panel floating-element">
+                    <h2 class="section-title"><i class="fas fa-poll"></i> ส่วนที่ 8: ตารางคะแนนมาตรฐาน (Scoreboard)</h2>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ปัจจัย (Weight %)</th>
+                                    <th>หูหนู</th>
+                                    <th>แครง</th>
+                                    <th>นางฟ้า</th>
+                                    <th>นางรม</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scoreTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="glass-panel floating-element">
+                    <h2 class="section-title"><i class="fas fa-chart-pie"></i> ส่วนที่ 9: กราฟวิเคราะห์อัจฉริยะ (Analytics Charts)</h2>
+                    <div class="charts-container">
+                        <div class="chart-box"><canvas id="radarChart"></canvas></div>
+                        <div class="chart-box"><canvas id="mpiBarChart"></canvas></div>
+                        <div class="chart-box"><canvas id="profitChart"></canvas></div>
+                        <div class="chart-box"><canvas id="bcrChart"></canvas></div>
+                        <div class="chart-box"><canvas id="yieldChart"></canvas></div>
+                        <div class="chart-box"><canvas id="paybackChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> กลับสู่หน้าหลักแบบจำลอง MSSM</a>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p style="opacity: 0.6; font-size: 0.8rem; text-align: center;">&copy; 2026 Mush-up NVC Project. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * -canvas.height;
+                this.size = Math.random() * 20 + 10;
+                this.speed = Math.random() * 1 + 0.5;
+                this.type = Math.random() > 0.5 ? '🍄' : '🍃';
+                this.opacity = Math.random() * 0.3;
+            }
+            update() {
+                this.y += this.speed;
+                if (this.y > canvas.height) this.reset();
+            }
+            draw() {
+                ctx.globalAlpha = this.opacity;
+                ctx.font = `${this.size}px Arial`;
+                ctx.fillText(this.type, this.x, this.y);
+            }
+        }
+        for(let i=0; i<35; i++) particles.push(new Particle());
+        function animateParticles() {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    </script>
+
+    <script>
+        let lastScrollY = window.scrollY;
+
+        window.addEventListener('load', function() {
+            if (window.innerWidth <= 992) {
+                const menuRow = document.querySelector('.nav-menus');
+                let scrollDirection = 1;
+                setInterval(() => {
+                    if (menuRow) {
+                        menuRow.scrollLeft += scrollDirection * 0.5;
+                        if (menuRow.scrollLeft >= (menuRow.scrollWidth - menuRow.clientWidth) || menuRow.scrollLeft <= 0) {
+                            scrollDirection *= -1;
+                        }
+                    }
+                }, 30);
+            }
+
+            window.addEventListener('scroll', function() {
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                const progress = document.getElementById('reading-progress');
+                if (progress) progress.style.height = scrolled + '%';
+
+                // แถบเมนูปัดหลบอัตโนมัติในมือถือ
+                if (window.innerWidth <= 992) {
+                    const nav = document.getElementById('stickyNav');
+                    if (window.scrollY > lastScrollY && window.scrollY > 100) {
+                        nav.classList.add('nav-hidden-auto');
+                    } else {
+                        nav.classList.remove('nav-hidden-auto');
+                    }
+                    lastScrollY = window.scrollY;
+                }
+            });
+        });
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            triggerCalculation();
+        }
+
+        const DB = [
+            { id: 'hunu', name: 'เห็ดหูหนูดำ', growth: 0.42, yieldG: 247.3, flowerDay: 14.1, walkDay: 30, img: 'https://api2.krua.co/wp-content/uploads/2020/06/ImageBannerMobile_960x633-327-scaled.jpg' },
+            { id: 'kraeng', name: 'เห็ดแครง', growth: 0.85, yieldG: 322.5, flowerDay: 8.2, walkDay: 30, img: 'https://f.ptcdn.info/545/083/000/sag26j103z5KPZfHnkB57-o.jpg' },
+            { id: 'nfa', name: 'นางฟ้าภูฐาน', growth: 0.61, yieldG: 428.6, flowerDay: 9.6, walkDay: 7, img: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRI5FrL5kwXLGrK9759BcISfpelswyyN_LxkHWBl0S2cg&s=10' },
+            { id: 'nrom', name: 'นางรมฮังการี', growth: 0.58, yieldG: 401.8, flowerDay: 10.4, walkDay: 7, img: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0msmUXbDnvff6WfO7ATPvlMVxpJ1Uvy3wvDrlrpkBXA&s=10' }
+        ];
+
+        function validateWeights() {
+            let w1 = parseFloat(document.getElementById('w1').value) || 0;
+            let w2 = parseFloat(document.getElementById('w2').value) || 0;
+            let w3 = parseFloat(document.getElementById('w3').value) || 0;
+            let w4 = parseFloat(document.getElementById('w4').value) || 0;
+            let w5 = parseFloat(document.getElementById('w5').value) || 0;
+            let w6 = parseFloat(document.getElementById('w6').value) || 0;
+
+            let total = w1 + w2 + w3 + w4 + w5 + w6;
+            document.getElementById('weightAlert').style.display = (total === 100) ? 'none' : 'block';
+        }
+
+        /* ฟังก์ชันล้างค่าเฉพาะส่วนที่ 1 กลับเป็นค่าเริ่มต้นดั้งเดิมตามเงื่อนไข */
+        function resetInputsOnly() {
+            document.getElementById('inGons').value = "100";
+            document.getElementById('inCostPerGon').value = "18";
+            document.getElementById('inPriceHunu').value = "60";
+            document.getElementById('inPriceKraeng').value = "120";
+            document.getElementById('inPriceNangfa').value = "70";
+            document.getElementById('inPriceNangrom').value = "75";
+            triggerCalculation(); // คำนวณใหม่ทันทีหลังรีเซ็ต
+        }
+
+        let charts = {};
+
+        function triggerCalculation() {
+            validateWeights();
+
+            const gons = parseFloat(document.getElementById('inGons').value) || 0;
+            const costPerGon = parseFloat(document.getElementById('inCostPerGon').value) || 0;
+            const totalCost = gons * costPerGon;
+
+            const prices = {
+                hunu: parseFloat(document.getElementById('inPriceHunu').value) || 0,
+                kraeng: parseFloat(document.getElementById('inPriceKraeng').value) || 0,
+                nfa: parseFloat(document.getElementById('inPriceNangfa').value) || 0,
+                nrom: parseFloat(document.getElementById('inPriceNangrom').value) || 0
+            };
+
+            const weights = [];
+            for(let i=1; i<=6; i++) weights.push((parseFloat(document.getElementById('w'+i).value) || 0) / 100);
+
+            // คำนวณผลลัพธ์ทางเศรษฐศาสตร์ (ส่วนที่ 3)
+            let results = DB.map(m => {
+                let priceKey = m.id.replace('nfa', 'nfa').replace('nrom', 'nrom');
+                if(priceKey === 'nfa') priceKey = 'nfa';
+
+                let yieldKg = (m.yieldG * gons) / 1000;
+                let revenue = yieldKg * prices[m.id];
+                let profit = revenue - totalCost;
+                let bcr = totalCost > 0 ? revenue / totalCost : 0;
+
+                let totalDays = m.walkDay + m.flowerDay;
+                let dailyIncome = totalDays > 0 ? revenue / totalDays : 0;
+                let payback = dailyIncome > 0 ? totalCost / dailyIncome : 0;
+
+                return { ...m, yieldKg, revenue, profit, bcr, payback, totalDays };
+            });
+
+            // Normalization อัตโนมัติ (ส่วนที่ 4)
+            const metrics = ['growth', 'yieldG', 'profit', 'bcr', 'flowerDay', 'payback'];
+            const mins = {}, maxs = {};
+
+            let rawMapped = results.map(r => ({
+                growth: r.growth, yieldG: r.yieldG, profit: r.profit,
+                bcr: r.bcr, flowerDay: r.flowerDay, payback: r.payback
+            }));
+
+            metrics.forEach(met => {
+                mins[met] = Math.min(...rawMapped.map(r => r[met]));
+                maxs[met] = Math.max(...rawMapped.map(r => r[met]));
+            });
+
+            results = results.map(r => {
+                let normValues = metrics.map((met, i) => {
+                    let val = r[met];
+                    let diff = maxs[met] - mins[met];
+                    if (diff === 0) return 1;
+                    return (i < 4) ? (val - mins[met]) / diff : (maxs[met] - val) / diff;
+                });
+
+                let mpi = normValues.reduce((sum, val, idx) => sum + (val * weights[idx]), 0);
+                return { ...r, mpi, normValues };
+            });
+
+            results.sort((a, b) => b.mpi - a.mpi);
+            renderDashboard(results);
+            renderTable(results, gons, costPerGon);
+            renderScoreboard(results, weights);
+            renderCharts(results);
+        }
+
+        function renderDashboard(data) {
+            const podiumList = document.getElementById('podiumList');
+            podiumList.innerHTML = '';
+
+            const medals = ['🥇', '🥈', '🥉', '✨'];
+
+            data.forEach((item, idx) => {
+                const isWinner = idx === 0 ? 'winner' : '';
+                const rating = item.mpi > 0.85 ? '★★★★★ เหมาะสมมาก' : item.mpi > 0.7 ? '★★★★☆ เหมาะสม' : '★★★☆☆ พอใช้';
+
+                podiumList.innerHTML += `
+                    <div class="podium-card ${isWinner}">
+                        <span class="rank-medal">${medals[idx] || ''} ${idx+1}</span>
+                        <img src="${item.img}" class="rank-img" alt="${item.name}">
+                        <div class="rank-info" style="text-align:left;">
+                            <h4 style="color:var(--text-main);">${item.name}</h4>
+                            <span class="star-rating">${rating}</span>
+                        </div>
+                        <div class="rank-info">
+                            <span style="font-size: 0.75rem; opacity: 0.7; display:block;">MPI SCORE</span>
+                            <span class="rank-score">${item.mpi.toFixed(4)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderTable(data, gons, costPerGon) {
+            const tbody = document.getElementById('ecoResultsBody');
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                const isDark = document.body.classList.contains('dark-mode');
+                const profitColor = item.profit >= 0 ? (isDark ? '#00ff66' : '#27ae60') : '#e74c3c';
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="text-align:left; font-weight:700;">${item.name}</td>
+                        <td>${item.yieldKg.toFixed(2)}</td>
+                        <td>${(gons * costPerGon).toFixed(0)}</td>
+                        <td>${item.revenue.toFixed(0)}</td>
+                        <td style="color:${profitColor}; font-weight:700;">${item.profit.toFixed(0)}</td>
+                        <td>${item.bcr.toFixed(2)}</td>
+                        <td>${item.payback.toFixed(1)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderScoreboard(data, weights) {
+            const scoreTableBody = document.getElementById('scoreTableBody');
+            scoreTableBody.innerHTML = '';
+
+            const sortedDataOrder = ['เห็ดหูหนูดำ', 'เห็ดแครง', 'นางฟ้าภูฐาน', 'นางรมฮังการี'];
+            let rowsContent = [];
+
+            const factorLabels = [
+                `อัตราเดินเส้นใย`,
+                `ปริมาณผลผลิต`,
+                `กำไรสุทธิ`,
+                `ค่า BCR`,
+                `วันออกดอกแรก`,
+                `ระยะเวลาคืนทุน`
+            ];
+
+            for(let fIdx=0; fIdx < 6; fIdx++) {
+                let factorWeightText = `${factorLabels[fIdx]} (${(weights[fIdx]*100).toFixed(0)}%)`;
+                let tds = `<td>${factorWeightText}</td>`;
+
+                sortedDataOrder.forEach(mName => {
+                    let obj = data.find(d => d.name === mName);
+                    tds += `<td>${obj ? obj.normValues[fIdx].toFixed(4) : 0}</td>`;
+                });
+                rowsContent.push(`<tr>${tds}</tr>`);
+            }
+            scoreTableBody.innerHTML = rowsContent.join('');
+        }
+
+        function renderCharts(data) {
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#e2e8f0' : '#2c3e50';
+            const gridColor = isDark ? 'rgba(0, 255, 102, 0.1)' : 'rgba(46, 204, 113, 0.15)';
+            const labels = data.map(d => d.name);
+
+            Chart.defaults.font.family = "'Prompt', sans-serif";
+            Chart.defaults.color = textColor;
+
+            const chartColors = isDark ? ['#00ff66', '#ff9900', '#00e5ff', '#ff007f'] : ['#2ecc71', '#e67e22', '#3498db', '#9b59b6'];
+
+            if(charts.radar) charts.radar.destroy();
+            charts.radar = new Chart(document.getElementById('radarChart').getContext('2d'), {
+                type: 'radar',
+                data: {
+                    labels: ['เส้นใย', 'ผลผลิต', 'กำไร', 'BCR', 'วันออกดอก', 'คืนทุน'],
+                    datasets: data.map((d, i) => ({
+                        label: d.name, data: d.normValues, borderColor: chartColors[i], backgroundColor: chartColors[i] + '15'
+                    }))
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { r: { grid: { color: gridColor }, ticks: { display: false }, pointLabels: { color: textColor } } }, plugins: { legend: { labels: { color: textColor } } } }
+            });
+
+            if(charts.mpi) charts.mpi.destroy();
+            charts.mpi = new Chart(document.getElementById('mpiBarChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'คะแนน MPI', data: data.map(d => d.mpi), backgroundColor: isDark ? ['#475569', '#ff9900', '#ff5500', '#00ff66'] : ['#bdc3c7', '#e67e22', '#d35400', '#2ecc71'] }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 1.0, ticks: { color: textColor }, grid: { color: gridColor } }, x: { ticks: { color: textColor } } }, plugins: { legend: { display: false }, title: { display: true, text: 'จัดอันดับประสิทธิภาพ (MPI)', color: textColor } } }
+            });
+
+            if(charts.profit) charts.profit.destroy();
+            charts.profit = new Chart(document.getElementById('profitChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'กำไรสุทธิ (บาท)', data: data.map(d => d.profit), backgroundColor: isDark ? '#00ff66' : '#2ecc71' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { color: textColor }, grid: { color: gridColor } }, x: { ticks: { color: textColor } } }, plugins: { legend: { display: false }, title: { display: true, text: 'การวิเคราะห์กำไรสุทธิ', color: textColor } } }
+            });
+
+            if(charts.bcr) charts.bcr.destroy();
+            charts.bcr = new Chart(document.getElementById('bcrChart').getContext('2d'), {
+                type: 'line',
+                data: { labels, datasets: [{ label: 'ค่า BCR', data: data.map(d => d.bcr), borderColor: isDark ? '#ff9900' : '#e67e22', fill: false, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { color: textColor }, grid: { color: gridColor } }, x: { ticks: { color: textColor } } }, plugins: { legend: { display: false }, title: { display: true, text: 'วิเคราะห์ความคุ้มค่า (BCR)', color: textColor } } }
+            });
+
+            if(charts.yield) charts.yield.destroy();
+            charts.yield = new Chart(document.getElementById('yieldChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'ผลผลิต (กก.)', data: data.map(d => d.yieldKg), backgroundColor: isDark ? '#00e5ff' : '#3498db' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { color: textColor }, grid: { color: gridColor } }, x: { ticks: { color: textColor } } }, plugins: { legend: { display: false }, title: { display: true, text: 'ปริมาณผลผลิตรวม', color: textColor } } }
+            });
+
+            if(charts.payback) charts.payback.destroy();
+            charts.payback = new Chart(document.getElementById('paybackChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'ระยะเวลา (วัน)', data: data.map(d => d.payback), backgroundColor: isDark ? '#ff007f' : '#e74c3c' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { color: textColor }, grid: { color: gridColor } }, x: { ticks: { color: textColor } } }, plugins: { legend: { display: false }, title: { display: true, text: 'ระยะเวลาคืนทุน', color: textColor } } }
+            });
+        }
+
+        window.onload = function() {
+            triggerCalculation();
+        };
+    </script>
+</body>
+</html>

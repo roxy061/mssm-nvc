@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Mush-up NVC | Smart Mushroom Selection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            /* Light Mode - Futuristic White & Clean Tone */
+            --primary: #4caf50;
+            --primary-dark: #388e3c;
+            --primary-light: rgba(76, 175, 80, 0.1);
+            --accent: #ffffff;                    
+            --accent-hover: #f1f5f9;
+            --accent-glow: rgba(255, 255, 255, 0.8);
+            --text-main: #1e293b;                 /* สำหรับหัวข้อหลัก */
+            --text-sub: #000000;                  /* ปรับตัวหนังสือที่เป็นเนื้อหาในโหมดสว่างให้เป็นสีดำบริสุทธิ์ */
+            --bg-body: #f8fafc;                   
+            --bg-white: #ffffff;                  
+            --border-card: rgba(0, 0, 0, 0.08);
+            --radius-main: 24px;
+            --shadow-soft: 0 10px 35px rgba(0,0,0,0.05);
+            --shadow-hover: 0 20px 55px rgba(0,0,0,0.1);
+            --sidebar-width: 220px;
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-bg: rgba(255, 255, 255, 0.85); 
+        }
+
+        /* Dark Mode - Tech Duck Green & Futuristic White Overlay */
+        body.dark-mode {
+            --primary: #00ff87;                   
+            --primary-dark: #10b981;          
+            --primary-light: rgba(0, 255, 135, 0.15);
+            --accent: #ffffff;                    
+            --accent-hover: #f1f5f9;
+            --text-main: #ffffff;                 
+            --text-sub: #e2e8f0;                  
+            --bg-body: #022c22;                   
+            --bg-white: rgba(255, 255, 255, 0.12);    
+            --border-card: rgba(255, 255, 255, 0.3);    
+            --shadow-soft: 0 10px 35px rgba(0, 0, 0, 0.5);
+            --shadow-hover: 0 0 30px rgba(255, 255, 255, 0.3), 0 0 15px rgba(0, 255, 135, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.35); 
+            --glass-bg: rgba(255, 255, 255, 0.08);     
+        }
+
+        html { scroll-padding-top: 80px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Prompt', sans-serif; line-height: 1.8;
+            color: var(--text-sub); background-color: var(--bg-body);
+            overflow-x: hidden; padding-left: var(--sidebar-width);
+            transition: background-color 0.4s ease, color 0.4s ease, padding-left 0.35s ease;
+            cursor: default;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        img, video, canvas { max-width: 100%; height: auto; display: block; }
+
+        #particleCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;
+            opacity: 0.5;
+        }
+
+        #reading-progress {
+            position: fixed; top: 0; left: 0; width: 4px; height: 0%;
+            background: linear-gradient(to bottom, var(--accent), var(--primary)); z-index: 1001;
+            transition: height 0.1s ease-out;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 30px; position: relative; }
+
+        h1, h2, h3, h4 { color: var(--text-main); transition: color 0.4s ease; font-weight: 700; }
+
+        section { padding: 60px 0; position: relative; }
+        .bg-white { background-color: transparent; }
+
+        .section-title {
+            text-align: center; font-size: 2.4rem; font-weight: 800; 
+            background: linear-gradient(135deg, var(--text-main) 30%, var(--primary) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 45px; letter-spacing: 0.5px; position: relative; transition: color 0.4s ease;
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+        }
+
+        body.dark-mode .section-title {
+            background: linear-gradient(135deg, #ffffff 40%, var(--primary) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .section-title::after {
+            content: ''; position: absolute; bottom: -12px; left: 50%;
+            transform: translateX(-50%); width: 80px; height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--primary)); border-radius: 4px;
+            transition: width 0.4s ease, background-color 0.4s ease;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .section-title:hover::after { width: 140px; }
+
+        .framed-box, .article-box, .chart-panel, .weight-panel, .contact-box-left, .contact-box-right, .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: var(--radius-main);
+            padding: 35px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--glass-border);
+            margin-bottom: 30px;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .framed-box:hover, .article-box:hover, .chart-panel:hover, .weight-panel:hover, .contact-box-left:hover, .contact-box-right:hover, .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+            border-color: #ffffff;
+        }
+
+        .sidebar-nav-container {
+            position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 24px 14px; display: flex; flex-direction: column; justify-content: flex-start;
+            gap: 20px; box-shadow: 4px 0 40px rgba(0,0,0,0.05); z-index: 1000;
+            overflow-y: auto; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.4s ease;
+        }
+
+        body.dark-mode .sidebar-nav-container {
+            background: rgba(2, 38, 30, 0.85);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-brand {
+            font-weight: 800; font-size: 1.4rem; letter-spacing: 0.8px; text-align: center;
+            margin-bottom: 10px; padding: 10px 0; flex-shrink: 0; transition: all 0.3s ease;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: none;
+        }
+
+        body.dark-mode .nav-brand {
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+        }
+
+        .nav-brand:hover { transform: scale(1.05); }
+
+        .nav-menus {
+            display: flex; flex-direction: column; gap: 10px;
+            scrollbar-width: none; -ms-overflow-style: none; user-select: none;
+        }
+
+        .nav-menus::-webkit-scrollbar { display: none; }
+
+        .nav-link {
+            text-decoration: none; color: #475569; font-weight: 600; font-size: 0.95rem;
+            padding: 14px 12px; border-radius: 18px; margin-bottom: 2px; text-align: center;
+            background: transparent; border: 1px solid transparent; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        body.dark-mode .nav-link { color: var(--text-sub); }
+
+        .nav-link:hover {
+            color: var(--primary-dark); background-color: rgba(255, 255, 255, 0.6);
+            border-color: rgba(0, 0, 0, 0.05); transform: translateY(-3px) scale(1.02);
+        }
+
+        body.dark-mode .nav-link:hover {
+            color: #ffffff; background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-link.active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-color: transparent; font-weight: 700; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2); }
+        body.dark-mode .nav-link.active { background: linear-gradient(135deg, var(--accent), #e2e8f0); color: #090d16; box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
+
+        .nav-hidden-auto { transform: translateY(-100%); }
+
+        .theme-toggle-wrapper {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; background: rgba(0,0,0,0.03);
+            border-radius: 18px; margin-top: auto; flex-shrink: 0;
+            transition: all 0.4s ease; border: 1px solid var(--glass-border);
+            font-size: 0.85rem; box-shadow: inset 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        body.dark-mode .theme-toggle-wrapper {
+            background: rgba(255,255,255,0.05); box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .theme-label { font-weight: 700; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px; }
+
+        .theme-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+
+        .theme-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1; transition: .4s; border-radius: 26px;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            border: 1px solid var(--glass-border);
+        }
+
+        body.dark-mode .theme-slider { background-color: #1e293b; }
+
+        .theme-slider span { font-size: 0.6rem; }
+
+        .theme-slider:before {
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        body.dark-mode .theme-slider:before { box-shadow: 0 0 8px var(--accent); }
+
+        input:checked + .theme-slider { background-color: #ffffff; }
+        input:checked + .theme-slider:before { transform: translateX(20px); background-color: #022c22; box-shadow: 0 0 8px var(--primary); }
+
+        .nav-action-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white; padding: 16px 14px; font-size: 1.05rem; font-weight: 700;
+            border: none; border-radius: 20px; cursor: pointer;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.2);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            display: inline-flex; flex-direction: column; align-items: center; gap: 8px;
+            font-family: 'Prompt', sans-serif; text-decoration: none; text-align: center;
+            margin-top: 30px; flex-shrink: 0; position: relative; overflow: hidden;
+        }
+
+        body.dark-mode .nav-action-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, #cbd5e1 100%);
+            color: #090d16;
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-action-btn:hover {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #1b5e20 100%);
+            transform: translateY(-5px) scale(1.02); box-shadow: 0 12px 25px rgba(76, 175, 80, 0.35);
+        }
+
+        body.dark-mode .nav-action-btn:hover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            box-shadow: 0 0 20px rgba(0, 255, 135, 0.5);
+        }
+
+        .theme-btn-float { display: none; }
+
+        header {
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            color: #1e293b; padding: 100px 40px; text-align: center;
+            position: relative; overflow: hidden; margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-card);
+            border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
+        }
+
+        body.dark-mode header {
+            background: linear-gradient(135deg, rgba(2, 44, 34, 0.9) 0%, rgba(9, 13, 22, 0.95) 100%);
+            color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        header h1 { font-size: 3.2rem; font-weight: 800; margin-bottom: 20px; letter-spacing: 0.5px; }
+        body.dark-mode header h1 { 
+            background: linear-gradient(135deg, #ffffff 40%, var(--primary) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+        }
+        header p { font-size: 1.3rem; font-weight: 400; color: var(--text-sub); }
+
+        .main-content { max-width: 1300px; margin: 0 auto; width: 100%; padding: 0 20px; }
+
+        .article-box { padding: 45px; border-radius: 32px; margin-bottom: 35px; }
+        .article-box h2 { color: var(--primary-dark); font-size: 2.2rem; margin-bottom: 25px; font-weight: 800; }
+        body.dark-mode .article-box h2 { color: var(--primary); }
+        .article-box p { color: var(--text-sub); font-size: 1.15rem; line-height: 1.9; margin-bottom: 15px; }
+        .article-box h4 { color: #e67e22; font-size: 1.35rem; font-weight: 700; margin-top: 30px; margin-bottom: 15px; }
+        body.dark-mode .article-box h4 { color: var(--accent); }
+        .article-box ul { list-style-type: none; padding-left: 10px; }
+        .article-box ul li { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 12px; padding-left: 24px; position: relative; }
+        .article-box ul li::before { content: "•"; color: var(--primary-dark); font-weight: bold; font-size: 1.4rem; position: absolute; left: 4px; top: -3px; }
+        body.dark-mode .article-box ul li::before { color: var(--primary); }
+
+        .product-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 45px; margin-bottom: 60px; }
+        .card { flex: 1 1 300px; max-width: 360px; border-top: 4px solid var(--primary); padding: 35px; border-radius: 28px; }
+        .card:hover { border-top-color: #388e3c; box-shadow: var(--shadow-hover); }
+        body.dark-mode .card:hover { border-top-color: var(--accent); }
+        .card-img { width: 100%; height: 210px; object-fit: cover; border-radius: 20px; margin-bottom: 20px; cursor: pointer; border: 1px solid var(--border-card); transition: transform 0.3s ease; }
+        .card-img:hover { transform: scale(1.03); }
+        .card h3 { border-bottom: 1px solid var(--border-card); padding-bottom: 15px; margin-bottom: 18px; font-size: 1.6rem; font-weight: 800; }
+        .card ul { list-style: none; margin-bottom: 20px; padding-left: 0; }
+        .card ul li { margin-bottom: 12px; padding-left: 24px; position: relative; font-size: 1.05rem; color: var(--text-sub); }
+        .card ul li::before { content: "🍄"; position: absolute; left: 0; font-size: 0.85rem; top: 2px; }
+
+        .toggle-btn {
+            background: rgba(0, 0, 0, 0.04);
+            color: var(--text-sub); border: 1px solid var(--glass-border); border-radius: 40px; padding: 16px 24px;
+            font-size: 1.05rem; font-weight: 700; cursor: pointer; width: 100%;
+            margin-top: auto; font-family: 'Prompt', sans-serif;
+            transition: all 0.35s ease;
+            backdrop-filter: blur(5px);
+        }
+        body.dark-mode .toggle-btn { background: rgba(255,255,255,0.05); color: white; }
+        .toggle-btn:hover { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(76,175,80,0.2); }
+        body.dark-mode .toggle-btn:hover { background: linear-gradient(135deg, var(--accent), #cbd5e1); color: #090d16; box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
+        .toggle-btn:active { transform: scale(0.97); }
+
+        .chart-tabs-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 50px; }
+        .chart-tabs-row { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-bottom: 15px; width: 100%; }
+        .chart-tab-btn {
+            background: rgba(0, 0, 0, 0.03); color: var(--text-sub); border: 1px solid var(--glass-border); border-radius: 30px;
+            padding: 14px 32px; font-family: 'Prompt', sans-serif; font-size: 1.05rem; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease; flex: 1 1 200px; max-width: 260px; white-space: nowrap;
+            backdrop-filter: blur(5px);
+        }
+        body.dark-mode .chart-tab-btn { background: rgba(255, 255, 255, 0.03); color: #cbd5e1; }
+        .chart-tab-btn:hover { background: rgba(0, 0, 0, 0.05); border-color: var(--primary); }
+        body.dark-mode .chart-tab-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); color: #fff; }
+        .chart-tab-btn.active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-color: transparent; font-weight: 700; box-shadow: 0 4px 12px rgba(76,175,80,0.2); }
+        body.dark-mode .chart-tab-btn.active { background: linear-gradient(135deg, var(--accent), #e2e8f0); color: #090d16; box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
+
+        .charts-comparison-grid { display: grid; grid-template-columns: 1fr; gap: 35px; margin-bottom: 40px; }
+        @media (min-width: 1024px) { .charts-comparison-grid { grid-template-columns: 1fr 1fr; gap: 45px; } }
+
+        .chart-panel { padding: 35px; border-radius: 32px; }
+        .static-panel { border-top: 4px solid var(--primary); }
+        .dynamic-panel { border-top: 4px solid var(--primary-dark); }
+        body.dark-mode .dynamic-panel { border-top: 4px solid var(--accent); }
+        .panel-title { font-size: 1.4rem; text-align: center; margin-bottom: 8px; font-weight: 800; }
+        .panel-subtitle { font-size: 0.95rem; text-align: center; color: var(--text-sub); margin-bottom: 20px; }
+
+        .chart-desc-box {
+            margin-top: auto; padding: 18px; border-radius: 16px; font-weight: 600;
+            color: var(--text-sub); font-size: 1rem; line-height: 1.6; text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02); margin-top: 25px; width: 100%; background-color: rgba(0,0,0,0.02);
+            border: 1px solid var(--glass-border);
+        }
+        body.dark-mode .chart-desc-box { background-color: rgba(255,255,255,0.02); color: var(--text-main); }
+        .static-desc { border-left: 4px solid var(--primary); background-color: var(--primary-light) !important; }
+        .dynamic-desc { border-left: 4px solid var(--primary-dark); background-color: rgba(76, 175, 80, 0.05) !important; }
+        body.dark-mode .dynamic-desc { border-left: 4px solid var(--accent); background-color: rgba(255, 255, 255, 0.05) !important; }
+
+        .quick-select-container { margin-bottom: 30px; text-align: center; padding: 20px; border-radius: 20px; }
+        .quick-select-container span { font-weight: 800; margin-right: 15px; color: var(--text-main); font-size: 1.1rem; }
+        .quick-select-container button { padding: 10px 18px; margin: 5px; border: 1px solid var(--glass-border); border-radius: 20px; background: rgba(0,0,0,0.03); font-family: 'Prompt', sans-serif; font-weight: 600; color: var(--text-sub); font-size: 0.9rem; cursor: pointer; transition: all 0.3s ease; }
+        body.dark-mode .quick-select-container button { background: rgba(255,255,255,0.05); }
+        .quick-select-container button:hover { background: var(--primary); color: white; border-color: transparent; transform: translateY(-2px); }
+        body.dark-mode .quick-select-container button:hover { background: var(--accent); color: #090d16; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+
+        .weight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px 60px; margin-top: 35px; }
+        @media (min-width: 768px) { .weight-grid { grid-template-columns: repeat(3, 1fr); } }
+        .weight-item { display: flex; flex-direction: column; }
+        .weight-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+        .weight-header span:first-child { display: flex; align-items: center; gap: 12px; }
+        .weight-val { color: var(--primary-dark); font-weight: 800; font-size: 1.5rem; }
+        body.dark-mode .weight-val { color: var(--accent); text-shadow: 0 0 8px rgba(255, 255, 255, 0.4); }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; touch-action: pan-y; }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%;
+            background: var(--primary-dark); cursor: pointer; margin-top: -6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        body.dark-mode input[type=range]::-webkit-slider-thumb { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); background: var(--primary); }
+        body.dark-mode input[type=range]::-webkit-slider-thumb:hover { background: #ffffff; box-shadow: 0 0 15px #ffffff; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 12px; cursor: pointer; background: rgba(0,0,0,0.06); border-radius: 8px; border: 1px solid var(--glass-border); }
+        body.dark-mode input[type=range]::-webkit-slider-runnable-track { background: rgba(255,255,255,0.1); }
+
+        .podium-container { display: flex; justify-content: center; align-items: flex-end; height: 160px; gap: 15px; margin-top: 25px; border-bottom: 2px solid var(--glass-border); padding-bottom: 0; overflow-x: hidden; }
+        .podium-item { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 85px; }
+        .podium-img { width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 2px solid var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: -12px; z-index: 2; background: #fff; }
+        body.dark-mode .podium-img { border: 2px solid var(--accent); box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .podium-step { width: 100%; border-radius: 12px 12px 0 0; color: white; display: flex; justify-content: center; padding-top: 12px; font-weight: bold; font-size: 1.2rem; box-shadow: inset 0 -8px 18px rgba(0,0,0,0.1); }
+        body.dark-mode .podium-step { color: #090d16; box-shadow: inset 0 -8px 18px rgba(0,0,0,0.15); }
+        .step-1 { background: linear-gradient(135deg, #4caf50, #2e7d32); font-weight: 800; }
+        body.dark-mode .step-1 { background: linear-gradient(135deg, #ffffff, #cbd5e1); }
+        .step-2 { background: linear-gradient(135deg, #81c784, #4caf50); }
+        body.dark-mode .step-2 { background: linear-gradient(135deg, #00ff87, #00b359); }
+        .step-3 { background: linear-gradient(135deg, #a5d6a7, #66bb6a); }
+        body.dark-mode .step-3 { background: linear-gradient(135deg, #a8e063, #56ab2f); }
+        .step-4 { background: linear-gradient(135deg, #cbd5e1, #94a3b8); padding-top: 8px; font-size: 1rem; }
+        body.dark-mode .step-4 { background: linear-gradient(135deg, #334155, #1e293b); color: #fff; }
+        .podium-label { margin-top: 10px; font-weight: 700; font-size: 0.85rem; color: var(--text-main); line-height: 1.2; text-align: center; word-break: break-all; width: 100%; }
+        .podium-score { color: var(--primary-dark); font-weight: 800; font-size: 0.85rem; display: block; margin-top: 4px; }
+        body.dark-mode .podium-score { color: var(--accent); }
+
+        .zero-waste-framed {
+            background: var(--glass-bg); border-radius: 40px;
+            padding: 60px; box-shadow: var(--shadow-soft);
+            border: 1px solid var(--glass-border); margin: 40px auto;
+            max-width: 1000px; width: 100%; transition: all 0.4s ease;
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        }
+        .zero-waste-framed:hover { box-shadow: var(--shadow-hover); border-color: rgba(255, 255, 255, 0.4); }
+
+        .zero-waste-step-box {
+            background: rgba(0,0,0,0.02); color: var(--text-sub);
+            padding: 28px 36px; border-left: 4px solid var(--primary);
+            border-radius: 0 20px 20px 0; margin-bottom: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02); font-size: 1.25rem; font-weight: 600;
+            transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        body.dark-mode .zero-waste-step-box { background: rgba(255,255,255,0.02); border-left: 4px solid var(--accent); color: var(--text-sub); }
+
+        .zero-waste-step-box strong { color: var(--primary-dark); }
+        body.dark-mode .zero-waste-step-box strong { color: var(--primary); }
+
+        .zero-waste-step-box:hover {
+            transform: translateX(10px) scale(1.01);
+            background: rgba(76, 175, 80, 0.08);
+            border-color: rgba(76, 175, 80, 0.2);
+        }
+        body.dark-mode .zero-waste-step-box:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.3); }
+
+        #back-to-top {
+            position: fixed; bottom: 40px; right: 40px; width: 60px; height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; text-decoration: none;
+            font-size: 1.4rem; box-shadow: 0 4px 15px rgba(76,175,80,0.3); z-index: 999;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.4s;
+            font-weight: bold;
+        }
+        body.dark-mode #back-to-top { background: linear-gradient(135deg, var(--accent), #cbd5e1); color: #090d16; box-shadow: 0 0 20px rgba(255,255,255,0.4); }
+        #back-to-top:hover { transform: rotate(360deg) scale(1.1); background: #388e3c; }
+        body.dark-mode #back-to-top:hover { background: var(--primary); box-shadow: 0 0 20px rgba(0,255,135,0.5); }
+
+        .blank-btn-container { text-align: center; margin: 80px 0 30px 0; }
+        .blank-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white; padding: 24px 70px; font-size: 1.4rem; font-weight: 800;
+            border: none; border-radius: 60px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(76,175,80,0.2); display: inline-flex; align-items: center; gap: 15px;
+            font-family: 'Prompt', sans-serif; text-decoration: none; position: relative; overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        body.dark-mode .blank-btn { background: linear-gradient(135deg, var(--accent) 0%, #cbd5e1 100%); color: #090d16; box-shadow: 0 0 25px rgba(255, 255, 255, 0.3); }
+        .blank-btn:hover { background: linear-gradient(135deg, var(--primary-dark) 0%, #1b5e20 100%); transform: translateY(-6px) scale(1.02); }
+        body.dark-mode .blank-btn:hover { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); box-shadow: 0 0 30px rgba(0, 255, 135, 0.5); }
+
+        .social-promo-row { display: flex; justify-content: center; gap: 25px; margin-bottom: 35px; flex-wrap: wrap; }
+        .social-btn {
+            display: inline-flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.04); color: var(--text-main);
+            padding: 14px 28px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1.05rem;
+            border: 1px solid var(--glass-border); transition: all 0.35s ease;
+        }
+        body.dark-mode .social-btn { background: rgba(255,255,255,0.05); color: #fff; }
+        .social-btn:hover { background: var(--primary); color: white; border-color: transparent; transform: translateY(-5px) scale(1.03); }
+        body.dark-mode .social-btn:hover { background: var(--accent); color: #090d16; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+        .social-btn.tiktok:hover { background: #000; color: #fff; }
+        body.dark-mode .social-btn.tiktok:hover { background: #fff; color: #000; }
+        .social-btn.ig:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; }
+
+        .contact-section-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; margin-bottom: 30px; }
+        .contact-box-left { border-top: 4px solid var(--primary); }
+        .contact-box-right { border-top: 4px solid var(--primary-dark); }
+        body.dark-mode .contact-box-right { border-top: 4px solid var(--accent); }
+
+        .contact-box-left h3, .contact-box-right h3 { font-size: 1.8rem; margin-bottom: 20px; color: var(--text-main); display: flex; align-items: center; font-weight: 800; gap: 10px; }
+        .contact-box-left ul, .contact-box-right ul { list-style-type: circle; padding-left: 35px; line-height: 1.8; color: var(--text-sub); font-weight: 600; font-size: 1.15rem; }
+        .contact-box-left li, .contact-box-right li { margin-bottom: 15px; }
+
+        .modal { display: none; position: fixed; z-index: 100000; left: var(--sidebar-width); top: 0; width: calc(100% - var(--sidebar-width)); height: 100%; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); overflow-y: auto; animation: fadeInModal 0.35s ease; cursor: default; }
+        body.dark-mode .modal { background-color: rgba(2, 22, 17, 0.85); }
+        @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+        .modal-content { background-color: #ffffff; margin: auto; padding: 50px; border-radius: 36px; width: 92%; max-width: 750px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.05); border: 1px solid var(--glass-border); margin-bottom: 60px; animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        body.dark-mode .modal-content { background-color: #022c22; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+        .close-btn { color: var(--text-sub); float: right; font-size: 32px; font-weight: bold; cursor: pointer; transition: color 0.3s; }
+        .close-btn:hover { color: var(--text-main); transform: rotate(90deg); display: inline-block; }
+
+        .modal-body h2 { color: var(--primary-dark); border-bottom: 2px solid var(--border-card); padding-bottom: 15px; margin-bottom: 30px; font-size: 2.2rem; font-weight: 800; }
+        body.dark-mode .modal-body h2 { color: var(--primary); }
+        .modal-body h4 { margin-top: 35px; margin-bottom: 12px; color: var(--text-main); font-size: 1.4rem; font-weight: 700; word-break: normal; overflow-wrap: break-word; }
+        body.dark-mode .modal-body h4 { color: var(--accent); }
+        .modal-body p, .modal-body ul { margin-bottom: 18px; font-size: 1.15rem; color: var(--text-sub); }
+        .modal-body strong { color: var(--text-main); }
+        .modal-body li { color: var(--text-sub); }
+
+        footer { background-color: #f1f5f9; color: var(--text-sub); text-align: center; padding: 80px 20px; border-top: 1px solid var(--glass-border); }
+        body.dark-mode footer { background-color: #021a14; color: #e2e8f0; }
+        footer:hover { background-color: #e2e8f0; }
+        body.dark-mode footer:hover { background-color: #02221a; }
+        footer a { color: var(--primary-dark); text-decoration: none; font-weight: 600; }
+        body.dark-mode footer a { color: var(--accent); }
+        footer a:hover { text-decoration: underline; color: var(--text-main); }
+
+        @media (max-width: 992px) {
+            body { padding-left: 0; }
+            .sidebar-nav-container {
+                position: fixed; top: 0; width: 100%; height: auto; max-height: 100vh;
+                background-color: rgba(255, 255, 255, 0.95); padding: 10px 16px;
+                display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 10px;
+                box-shadow: 0 4px 25px rgba(0,0,0,0.05); z-index: 1000; overflow-y: auto; backdrop-filter: blur(12px);
+                transition: transform 0.3s ease-in-out; border-right: none; border-bottom: 1px solid var(--glass-border);
+            }
+            body.dark-mode .sidebar-nav-container { background-color: rgba(2, 26, 20, 0.95); box-shadow: 0 4px 25px rgba(0,0,0,0.5); }
+            .sidebar-nav-container.nav-hidden-auto { transform: translateY(-100%); }
+
+            .nav-brand { font-size: 1.2rem; margin: 0; padding: 0; white-space: nowrap; }
+
+            header { margin-top: 65px; border-radius: 0; padding: 50px 15px; }
+            header h1 { font-size: 2rem; }
+            header p { font-size: 0.85rem; }
+
+            section { padding: 40px 0; }
+            .section-title { font-size: 1.6rem; margin-bottom: 35px; gap:8px; }
+            .card { max-width: 100%; }
+
+            .nav-menus {
+                flex-direction: row; overflow-x: auto; flex-wrap: nowrap; gap: 10px; width: auto;
+                flex-grow: 1; padding-bottom: 0; align-items: center; scrollbar-width: none;
+            }
+            .nav-menus::-webkit-scrollbar { display: none; }
+
+            .nav-link {
+                font-size: 0.82rem; padding: 10px 14px; white-space: nowrap; border-radius: 14px;
+                margin-bottom: 0; color: var(--text-sub);
+            }
+            .nav-link:hover { transform: translateY(-2px) scale(1.02); }
+
+            .nav-action-btn { margin-top: 0; font-size: 0.8rem; padding: 10px 14px; white-space: nowrap; border-radius: 14px; }
+
+            .theme-toggle-wrapper {
+                padding: 6px 10px; gap: 6px; border-radius: 14px;
+                flex-direction: row; margin-top:0; width: auto; order: 6;
+                background: var(--bg-body); border: 1px solid var(--border-card);
+            }
+            .theme-label { font-size: 0.75rem; width: auto; text-align: left; }
+            .theme-switch { width: 40px; height: 22px; }
+            .theme-slider { font-size: 0.5rem; gap: 4px; padding: 0 2px; }
+            .theme-slider span { font-size: 0.6rem; }
+            .theme-slider:before { width: 14px; height: 14px; left: 2px; bottom: 3px; }
+            input:checked + .theme-slider:before { transform: translateX(18px); }
+
+            .article-box { padding: 25px; border-radius: 20px; margin-bottom: 25px; }
+            .article-box h2 { font-size: 1.4rem; }
+            .article-box p { font-size: 0.95rem; }
+            .article-box h4 { font-size: 1.05rem; }
+            .article-box ul li { font-size: 0.9rem; margin-bottom: 8px; }
+
+            .product-grid { gap: 25px; margin-bottom: 35px; }
+            .card { padding: 25px; border-radius: 20px; max-width: 100%; }
+            .card-img { height: 160px; border-radius: 12px; }
+            .card h3 { font-size: 1.25rem; padding-bottom: 8px; margin-bottom: 12px; }
+            .card ul li { font-size: 0.9rem; margin-bottom: 8px; }
+
+            .chart-tabs-container { margin-bottom: 30px; }
+            .chart-tab-btn { padding: 10px 16px; font-size: 0.8rem; flex: 1 1 130px; max-width: 170px; border-radius: 20px; }
+
+            .charts-comparison-grid { gap: 25px; margin-bottom: 35px; }
+            .chart-panel { padding: 20px; border-radius: 20px; }
+            .panel-title { font-size: 1.05rem; }
+            .panel-subtitle { font-size: 0.75rem; }
+
+            .weight-panel { padding: 20px; border-radius: 20px; }
+            .weight-grid { gap: 18px 25px; margin-top: 20px; }
+            .weight-header { font-size: 0.95rem; margin-bottom: 10px; }
+            .weight-val { font-size: 1.15rem; }
+            input[type=range]::-webkit-slider-thumb { height: 20px; width: 20px; margin-top: -4px; }
+            input[type=range]::-webkit-slider-runnable-track { height: 8px; }
+
+            .podium-container { height: 110px; gap:8px; }
+            .podium-img { width: 32px; height: 32px; margin-bottom: -8px; }
+            .podium-step { font-size: 0.8rem; padding-top: 6px; }
+            .podium-label { font-size: 0.58rem; }
+
+            .quick-select-container { padding: 12px; border-radius: 16px; margin-bottom: 20px; }
+            .quick-select-container span { font-size: 0.85rem; margin-right: 8px; display: block; }
+            .quick-select-container button { padding: 6px 10px; font-size: 0.75rem; }
+
+            .zero-waste-framed { padding: 30px; border-radius: 24px; margin: 25px auto; }
+            .zero-waste-step-box { padding: 16px 20px; font-size: 0.95rem; border-left-width: 5px; border-radius: 0 12px 12px 0; margin-bottom: 15px; }
+
+            .blank-btn-container { margin: 40px 0 15px 0; }
+            .blank-btn { padding: 16px 35px; font-size: 1rem; border-radius: 40px; }
+
+            .social-promo-row { gap: 10px; margin-bottom: 20px; }
+            .social-btn { padding: 8px 18px; font-size: 0.85rem; }
+
+            .contact-section-container { gap: 25px; margin-bottom: 20px; }
+            .contact-box-left h3, .contact-box-right h3 { font-size: 1.4rem; margin-bottom: 15px; }
+            .contact-box-left ul, .contact-box-right ul { padding-left: 25px; font-size: 0.95rem; }
+
+            footer { padding: 40px 10px; font-size: 0.8rem; }
+            footer p { font-size: 0.75rem; }
+
+            .modal { left: 0; width: 100%; padding-top: 15px; }
+            .modal-content { padding: 30px; width: 95%; border-radius: 20px; margin-bottom: 20px; }
+            .close-btn { font-size: 24px; }
+            .modal-body h2 { font-size: 1.4rem; border-bottom-width: 3px; padding-bottom: 8px; margin-bottom: 15px; }
+            .modal-body h4 { font-size: 1.1rem; margin-top: 25px; margin-bottom: 10px; }
+            .modal-body p, .modal-body ul { font-size: 0.95rem; margin-bottom: 12px; }
+
+            #back-to-top { width: 38px; height: 38px; bottom: 25px; right: 25px; font-size: 1rem; }
+        }
+
+        .mushroom-fall {
+            position: absolute; top: -50px; font-size: 2rem; z-index: -1; pointer-events: none;
+        }
+
+        @keyframes fall {
+            0% { top: -50px; opacity: 0.4; transform: translateY(0px) rotate(0deg); }
+            100% { top: 120px; opacity: 0; transform: translateY(120px) rotate(360deg); }
+        }
+
+        .mushroom-falling-particle {
+            position: absolute; top: -60px; z-index: 2; pointer-events: none;
+            animation: particleFalling linear infinite;
+        }
+
+        @keyframes particleFalling {
+            0% { top: -60px; opacity: 0.8; transform: translateX(0px) rotate(0deg); }
+            100% { top: 100vh; opacity: 0; transform: translateX(20px) rotate(360deg); }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body id="header-section">
+
+    <div id="falling-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none;">
+        <div class="mushroom-falling-particle" style="left: 8%; animation-duration: 8s; animation-delay: 0s; font-size: 2.2rem;">🍄</div>
+        <div class="mushroom-falling-particle" style="left: 25%; animation-duration: 11s; animation-delay: 3s; font-size: 1.8rem;">♻️</div>
+        <div class="mushroom-falling-particle" style="left: 45%; animation-duration: 9s; animation-delay: 1.5s; font-size: 2rem;">🍄</div>
+        <div class="mushroom-falling-particle" style="left: 70%; animation-duration: 10s; animation-delay: 4s; font-size: 1.9rem;">♻️</div>
+        <div class="mushroom-falling-particle" style="left: 88%; animation-duration: 8.5s; animation-delay: 2s; font-size: 2.3rem;">🍄</div>
+        <div class="mushroom-falling-particle" style="left: 15%; animation-duration: 10.5s; animation-delay: 5s; font-size: 2rem;">🍄</div>
+    </div>
+
+    <div id="reading-progress"></div>
+
+    <a href="#header-section" id="back-to-top" title="กลับขึ้นด้านบน"><i class="fas fa-arrow-up"></i></a>
+
+    <canvas id="particleCanvas"></canvas>
+
+    <div class="sidebar-nav-container" id="stickyNav">
+        <div class="nav-brand"><i class="fas fa-network-wired"></i> Mush-Up NVC</div>
+        <div class="nav-menus">
+            <a href="index.html#header-section" class="nav-link">หน้าแรก</a>
+            <a href="index.html#product-section" class="nav-link">ข้อมูลของเห็ดแต่ละสายพันธุ์</a>
+            <a href="index.html#graph-section" class="nav-link">การตัดสินใจเลือกสายพันธุ์เห็ด</a>
+            <a href="index.html#contact-section" class="nav-link">ติดต่อ</a>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSfv9wysUClz6pVb4c6e1fMVbXUn-a0MU5Yj9ui9HSoSLch2Jw/viewform" target="_blank" class="nav-link">ความพึงพอใจ MSSM</a>
+            <a href="blank.html" target="_blank" class="nav-action-btn">
+                <span>⚡</span> ทดลองแต่งแบบจำลอง MSSM
+            </a>
+        </div>
+        <div class="theme-toggle-wrapper">
+            <span class="theme-label"><i class="fas fa-sun fa-xs"></i> / <i class="fas fa-moon fa-xs"></i></span>
+            <label class="theme-switch">
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                <div class="theme-slider">
+                    <span>🌙</span>
+                    <span>☀️</span>
+                </div>
+            </label>
+        </div>
+    </div>
+    <header id="top">
+        <div class="container">
+            <h1>Mush-Up Smart Selection Model (MSSM)</h1>
+            <p>แบบจำลองเพื่อการเลือกสายพันธ์ุเห็ดที่เหมาะสมกับวัตถุประสงค์การผลิต</p>
+        </div>
+    </header>
+    <div class="main-content">
+        <div class="framed-box" style="text-align: center; max-width: 950px; margin: 30px auto;">
+            <p style="font-weight: 800; margin-bottom: 15px;"><i class="fas fa-atom"></i><h2>ที่มาของ Mush-Up Smart Selection Model (MSSM)</h2></p>
+            <p>แบบจำลอง MSSM สามารถจัดอันดับความเหมาะสมของสายพันธุ์เห็ดตามวัตถุประสงค์การผลิต ช่วยเพิ่มประสิทธิภาพการใช้ทรัพยากร ลดความเสี่ยงในการผลิต และเพิ่มผลตอบแทนทางเศรษฐกิจแก่เกษตรกรและชุมชน อีกทั้งยังสามารถประยุกต์ใช้ในการเรียนการสอนและพัฒนาต่อยอดด้านเกษตรอัจฉริยะ ซึ่งสอดคล้องกับเป้าหมายการพัฒนาที่ยั่งยืน (SDGs) ได้แก่ เป้าหมายที่ 2 ขจัดความหิวโหย เป้าหมายที่ 8 งานที่มีคุณค่าและการเติบโตทางเศรษฐกิจ และเป้าหมายที่ 12 การผลิตและการบริโภคที่ยั่งยืน </p>
+        </div>
+            <div class="container">
+                <h2 class="section-title" id="product-section">ข้อมูลของเห็ดแต่ละสายพันธุ์</h2>
+                <div class="product-grid">
+                    <div class="framed-box card" onclick="playClickSound()">
+                        <img class="card-img" onclick="openModal('modal1')" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0msmUXbDnvff6WfO7ATPvlMVxpJ1Uvy3wvDrlrpkBXA&s=10" alt="เห็ดนางรมฮังการี">
+                        <h3>เห็ดนางรมฮังการี</h3>
+                        <ul>
+                            <li><strong>จุดเด่น:</strong> ดอกใหญ่ เนื้อแน่น เหนียวนุ่ม สู้ฟัน เพาะง่ายใน 7 วัน</li>
+                            <li><strong>โภชนาการ:</strong> พลังงานประมาณ 30 - 47 กิโลแคลอรี / 100 กรัม</li>
+                        </ul>
+                        <button class="toggle-btn" onclick="event.stopPropagation(); openModal('modal1')">ดูข้อมูลเชิงลึก</button>
+                    </div>
+                    <div class="framed-box card" onclick="playClickSound()">
+                        <img class="card-img" onclick="openModal('modal2')" src="https://image.makewebeasy.net/makeweb/m_1920x0/VpofhVYKS/Farm/messageImage_1618034207531.jpg" alt="เห็ดนางฟ้าภูฐาน">
+                        <h3>เห็ดนางฟ้าภูฐาน</h3>
+                        <ul>
+                            <li><strong>จุดเด่น:</strong> หวานนุ่มละมุนลิ้น เพาะง่าย โตไว เลี้ยงง่ายที่สุดในเซ็ต</li>
+                            <li><strong>โภชนาการ:</strong> แคลอรี่ต่ำ เหมาะกับการควบคุมน้ำหนัก</li>
+                        </ul>
+                        <button class="toggle-btn" onclick="event.stopPropagation(); openModal('modal2')">ดูข้อมูลเชิงลึก</button>
+                    </div>
+                    <div class="framed-box card" onclick="playClickSound()">
+                        <img class="card-img" onclick="openModal('modal3')" src="https://f.ptcdn.info/545/083/000/sag26j103z5KPZfHnkB57-o.jpg" alt="เห็ดแครง">
+                        <h3>เห็ดแครง</h3>
+                        <ul>
+                            <li><strong>จุดเด่น:</strong> เนื้อนุ่มหนึบหนับ โปรตีนสูงระดับ Superfood</li>
+                            <li><strong>โภชนาการ:</strong> โปรตีนสูงถึง 17.0 g / 100 กรัม ทดแทนเนื้อสัตว์ได้ดี</li>
+                        </ul>
+                        <button class="toggle-btn" onclick="event.stopPropagation(); openModal('modal3')">ดูข้อมูลเชิงลึก</button>
+                    </div>
+                    <div class="framed-box card" onclick="playClickSound()">
+                        <img class="card-img" onclick="openModal('modal4')" src="https://api2.krua.co/wp-content/uploads/2020/06/ImageBannerMobile_960x633-327-scaled.jpg" alt="เห็ดหูหนูดำ">
+                        <h3>เห็ดหูหนูดำ</h3>
+                        <ul>
+                            <li><strong>จุดเด่น:</strong> กรุบกรอบ เคี้ยวเพลิน แคลอรีต่ำ ไฟเบอร์สูง</li>
+                            <li><strong>โภชนาการ:</strong> เส้นใยอาหาร 7 g และธาตุเหล็ก 6.1 มิลลิกรัม / 100 กรัม</li>
+                        </ul>
+                        <button class="toggle-btn" onclick="event.stopPropagation(); openModal('modal4')">ดูข้อมูลเชิงลึก</button>
+                    </div>
+                </div>
+
+                <h2 class="section-title" id="graph-section">ผลการประเมินเพื่อการตัดสินใจเลือกสายพันธุ์เห็ด (MSSM)</h2>
+                <p style="text-align: center; margin-bottom: 35px; color: var(--text-sub); font-size: 1.05rem;">คลิกที่ปุ่มด้านล่างเพื่อสลับดูกราฟแสดงผลค่าดัชนีและอันดับของเห็ดแต่ละสายพันธุ์ตามปัจจัยต่างๆ ในแบบจำลอง MSSM</p>
+
+                <div class="chart-tabs-container" id="chartTabs">
+                    <div class="chart-tabs-row">
+                        <button class="chart-tab-btn active" onclick="switchTab(1)"><span>🍃</span> 1. อัตราการเจริญเติบโต</button>
+                        <button class="chart-tab-btn" onclick="switchTab(2)"><span>🍃</span> 2. ปริมาณผลผลิตรวม</button>
+                        <button class="chart-tab-btn" onclick="switchTab(3)"><span>💵</span> 3. กำไรสุทธิ</button>
+                        <button class="chart-tab-btn" onclick="switchTab(4)"><span>💵</span> 4. อัตราผลตอบแทน (BCR)</button>
+                        <button class="chart-tab-btn" onclick="switchTab(5)"><span>⏰</span> 5. ระยะเวลาออกดอกแรก</button>
+                        <button class="chart-tab-btn" onclick="switchTab(6)"><span>⏰</span> 6. ระยะเวลาคืนทุน</button>
+                    </div>
+                    <div class="chart-tabs-row">
+                        <button class="chart-tab-btn" onclick="switchTab(7)" style="border-radius: 30px;">7. ภาพรวม (MPI)</button>
+                    </div>
+                </div>
+
+                <div class="charts-comparison-grid">
+                    <div class="chart-panel static-panel">
+                        <h3 class="panel-title" style="color: var(--primary-dark);">📊 ผลการประเมินเพื่อการตัดสินใจเลือกสายพันธุ์เห็ด (มาตรฐาน)</h3>
+                        <p class="panel-subtitle">อ้างอิงตามค่าน้ำหนักปัจจัยของMSSM</p>
+
+                        <div id="static-chart-wrapper" style="position: relative; height: 250px; width: 100%;">
+                            <canvas id="staticChart"></canvas>
+                        </div>
+
+                        <div id="static-podium-wrapper" style="display: none; height: 140px;">
+                            <div id="static-podium" class="podium-container"></div>
+                        </div>
+
+                        <div id="static-desc" class="chart-desc-box static-desc"></div>
+                    </div>
+
+                    <div class="chart-panel dynamic-panel">
+                        <h3 class="panel-title" style="color: var(--primary-dark);">⚙️ ผลการประเมินเพื่อการตัดสินใจ</h3>
+                        <p class="panel-subtitle">เลือกสายพันธุ์เห็ดโดยผู้ใช้กำหนด</p>
+
+                        <div id="dynamic-chart-wrapper" style="position: relative; height: 250px; width: 100%;">
+                            <canvas id="dynamicChart"></canvas>
+                        </div>
+
+                        <div id="dynamic-podium-wrapper" style="display: none; height: 140px;">
+                            <div id="dynamic-podium" class="podium-container"></div>
+                        </div>
+
+                        <div id="dynamic-desc" class="chart-desc-box dynamic-desc"></div>
+                    </div>
+                </div>
+
+                <div class="framed-box quick-select-container" onclick="playHapticOrSound()" style="margin-bottom: 25px; text-align: center;">
+                    <span style="font-weight: 800; margin-right: 12px; color: var(--text-main); font-size: 1rem;">⚡ เลือกความต้องการด่วน:</span>
+                    <button onclick="applyQuickProfile('standard')">ตามมาตรฐาน</button>
+                    <button onclick="applyQuickProfile('fast-rich')">สายเน้นรวยเร็ว</button>
+                    <button onclick="applyQuickProfile('impatient')">สายใจร้อน</button>
+                    <button onclick="applyQuickProfile('balanced')">สายสมดุล</button>
+                </div>
+
+                <div class="framed-box weight-panel" oninput="updateWeights(event); vibrateDevice();">
+                    <div style="text-align: center; margin-bottom: 12px;">
+                        <h3 style="color: var(--text-main); font-size: 1.3rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span style="font-size: 1.5rem;">⚙️</span> ปรับแต่งค่าน้ำหนักปัจจัย (Custom Weights)
+                        </h3>
+                        <p style="color: var(--text-sub); font-size: 0.85rem;">ระบบจะนำไปประเมินผลเพื่อการตัดสินใจเลือกสายพันธุ์เห็ดที่เหมาะสมกับการใช้งานของคุณ (ผลรวมสเกลทั้ง 6 ช่อง รวมกันไม่เกิน 1.0)</p>
+                    </div>
+
+                    <div class="weight-grid">
+                        <div class="weight-item">
+                            <div class="weight-header"><span><span>🍃</span> 1. อัตราเจริญเติบโต</span> <span class="weight-val" id="val1">0.15</span></div>
+                            <input type="range" id="w1" min="0" max="1" step="0.01" value="0.15">
+                        </div>
+                        <div class="weight-item">
+                            <div class="weight-header"><span><span>🍃</span> 2. ปริมาณผลผลิตรวม</span> <span class="weight-val" id="val2">0.25</span></div>
+                            <input type="range" id="w2" min="0" max="1" step="0.01" value="0.25">
+                        </div>
+                        <div class="weight-item">
+                            <div class="weight-header"><span><span>💵</span> 3. กำไรสุทธิ</span> <span class="weight-val" id="val3">0.25</span></div>
+                            <input type="range" id="w3" min="0" max="1" step="0.01" value="0.25">
+                        </div>
+                        <div class="weight-item">
+                            <div class="weight-header"><span><span>💵</span> 4. ผลตอบแทน (BCR)</span> <span class="weight-val" id="val4">0.15</span></div>
+                            <input type="range" id="w4" min="0" max="1" step="0.01" value="0.15">
+                        </div>
+                        <div class="weight-item">
+                            <div class="weight-header"><span><span>⏰</span> 5. ให้ผลผลิตครั้งแรก</span> <span class="weight-val" id="val5">0.10</span></div>
+                            <input type="range" id="w5" min="0" max="1" step="0.01" value="0.10">
+                        </div>
+                        <div class="weight-item">
+                            <div class="weight-header"><span><span>⏰</span> 6. ระยะเวลาคืนทุน</span> <span class="weight-val" id="val6">0.10</span></div>
+                            <input type="range" id="w6" min="0" max="1" step="0.01" value="0.10">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="blank-btn-container" onclick="vibrateDevice()">
+                    <a href="blank.html" target="_blank" class="blank-btn">
+                        <span>🚀</span> ทดลองแต่งแบบจำลองMSSMในแบบของคุณ
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+        <section class="zero-waste-framed">
+            <div class="container" style="max-width: 100%; padding: 0;">
+                <h2 class="section-title" style="margin-bottom: 40px;">Zero Waste Life วิถีรักษ์โลก</h2>
+                <div style="text-align: center; margin-bottom: 35px;">
+                    <h3 style="color: var(--primary-dark); font-size: 1.6rem; margin-bottom: 10px;">ชุบชีวิตก้อนเห็ดสู่ปุ๋ยต้นไม้ ♻️</h3>
+                    <p style="color: var(--text-sub); font-size: 1.1rem; font-weight: 600;">เมื่อก้อนเห็ดหมดอายุ (เก็บเกี่ยวครบ 4-6 รอบ หรือก้อนเปลี่ยนเป็นสีน้ำตาลเข้ม) อย่าเพิ่งทิ้ง!</p>
+                </div>
+                <div class="zero-waste-step-box"><strong>ขั้นตอนที่ 1:</strong> ลอกพลาสติกออก แยกพลาสติกและจุกทิ้งลงในถังขยะรีไซเคิล</div>
+                <div class="zero-waste-step-box"><strong>ขั้นตอนที่ 2:</strong> ทุบก้อน แกะขี้เลื่อยด้านในออกมาทุบให้ร่วน</div>
+                <div class="zero-waste-step-box"><strong>ขั้นตอนที่ 3:</strong> ผสมดิน โดยใช้เศษใบไม้หรือปุ๋ยคอกมาผสมเข้าด้วยกัน แล้วพรมน้ำพอหมาดๆ</div>
+                <div class="zero-waste-step-box"><strong>ขั้นตอนที่ 4:</strong> หมักทิ้งไว้ประมาณ 3 สัปดาห์ จะได้ปุ๋ยอินทรีย์ชั้นดีพร้อมนำไปบำรุงต้นไม้</div>
+            </div>
+        </section>
+
+        <section class="bg-white" id="contact-section">
+            <div class="container">
+                <h2 class="section-title">ช่องทางการติดต่อ</h2>
+                <div class="contact-section-container">
+                    <div class="framed-box contact-box-left">
+                        <h3><span style="font-size: 1.6rem; margin-right: 8px;">•</span> ครูที่ปรึกษาโครงงาน</h3>
+                        <ul>
+                            <li>นายวิระศักดิ์ พูนพนัง<br><span style="font-weight: 400; font-size: 0.9rem;">โทรศัพท์: 0835356865</span></li>
+                            <li>นางสาวกนกนาถ จันทรโชตะ<br><span style="font-weight: 400; font-size: 0.9rem;">โทรศัพท์: 0626683443</span></li>
+                            <li>นางสาวสุรัตนี เสนีชัย<br><span style="font-weight: 400; font-size: 0.9rem;">โทรศัพท์: 0852276413</span></li>
+                            <li>นางสาวอังคณา ชูสุวรรณ<br><span style="font-weight: 400; font-size: 0.9rem;">โทรศัพท์: 0857959291</span></li>
+                            <li>นางสาวศิรภัสสร สิทธิพิทักษ์<br><span style="font-weight: 400; font-size: 0.9rem;">โทรศัพท์: 0811880835</span></li>
+                        </ul>
+                    </div>
+                    <div class="framed-box contact-box-right">
+                        <h3><span style="font-size: 1.6rem; margin-right: 8px;">•</span> นักศึกษา</h3>
+                        <ul>
+                            <li>นายทานุฑัต ทิพย์เสภา<br><span style="font-weight: 400; font-size: 0.9rem;">โทรศัพท์: 0923685270</span></li>
+                            <li>นางสาวกวินธิดา คชรัตน์<br><span style="font-weight: 400; font-size: 0.9rem;">โทรศัพท์: 0835092468</span></li>
+                            <li>นายสัณห์ สังขพงศ์<br><span style="font-weight: 400; font-size: 0.9rem;">โทรศัพท์: 0941973159</span></li>
+                            <li>นายวุฒิภัทร มากด้วง<br><span style="font-weight: 400; font-size: 0.8rem;">โทรศัพท์: 0834317907</span></li>
+                            <li>นายภคพล สมัยแก้ว<br><span style="font-weight: 400; font-size: 0.9rem;">โทรศัพท์: 0612166244</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p style="margin-bottom: 15px;">
+                <a href="https://www.nvc.ac.th/?usid=10000001" target="_blank">วิทยาลัยอาชีวศึกษานครศรีธรรมราช (NVC)</a> |
+                <a href="https://www.facebook.com/p/%E0%B8%9F%E0%B8%B2%E0%B8%A3%E0%B9%8C%E0%B8%A1%E0%B9%80%E0%B8%A4%E0%B9%5E%E0%B8%A1%E0%B9%82%E0%B8%A1%E0%B9%88%E0%B8%AA%E0%B8.B8%E0%B8.99%E0%B8.B5%E0%B8.A2%E0%B9%8C-%E0%B88%88%E0%B8%99%E0%B8.84%E0%B8.A3%E0%B8.A8%E0%B8.A3%E0%B8.B5-100064802586046/?locale=th_TH" target="_blank">ฟาร์มเห็ดแม่สุนีย์</a> |
+                บ้านครูกนกนาถ
+            </p>
+            <p style="margin-bottom: 15px; font-weight: 600; color: var(--primary-dark);">ติดตามพวกเรา:</p>
+            <div class="social-promo-row">
+                <a href="https://www.tiktok.com/@mushup.smart.sele" target="_blank" class="social-btn tiktok"><i class="fa-brands fa-tiktok"></i> TikTok</a>
+                <a href="https://www.instagram.com/mssm_nvc.official" target="_blank" class="social-btn ig"><i class="fa-brands fa-instagram"></i> Instagram</a>
+            </div>
+            <p style="opacity: 0.6; font-size: 0.75rem; text-align: center;">&copy; 2026 Mush-up NVC Project. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <div id="modal1" class="modal" onclick="closeModal('modal1')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeModal('modal1')">&times;</span>
+            <div class="modal-body">
+                <h2>เห็ดนางรมฮังการี</h2>
+                <p><strong>จุดเด่น:</strong> ดอกใหญ่ เนื้อแน่น เหนียวนุ่ม สู้ฟัน เพาะง่ายใน 7 วัน</p>
+                <h4>📊 ข้อมูลโภชนาการ (ต่อ 100 กรัม)</h4>
+                <ul>
+                    <li><strong>พลังงาน:</strong> ประมาณ 30 - 47 กิโลแคลอรี</li>
+                    <li><strong>โปรตีน:</strong> ประมาณ 3 - 4 g <span class="badge" style="background:#f1c40f; color:#000; padding:2px 5px; border-radius:3px;">ช่วยเสริมสร้างกล้ามเนื้อ</span></li>
+                    <li><strong>คาร์โบไฮเดรต:</strong> ประมาณ 5 - 9 g</li>
+                    <li><strong>ใยอาหาร (ไฟเบอร์):</strong> ประมาณ 2 - 4.3 g <span class="badge" style="background:#f1c40f; color:#000; padding:2px 6px; border-radius:4px; font-size: 0.95rem;">ช่วยเรื่องระบบขับถ่าย</span></li>
+                    <li><strong>ไขมัน:</strong> ประมาณ 0.2 - 0.4 g</li>
+                </ul>
+                <h4>💧 การดูแลและเก็บเกี่ยว</h4>
+                <ul>
+                    <li><strong>สถานที่:</strong> จัดวางในที่ร่ม อากาศถ่ายเทได้สะดวก ไม่โดนแสงแดดจัด หลีกเลี่ยงลมโกรกแรง</li>
+                    <li><strong>การรดน้ำ:</strong> ชอบความชื้นสูง (70-80%) ควรพ่นละอองน้ำวันละ 2-4 ครั้ง</li>
+                    <li><strong>การเก็บเกี่ยว:</strong> เก็บเมื่อหมวกเห็ดคลี่บานเต็มที่ แต่ขอบหมวกยังไม่กระดกขึ้น</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal2" class="modal" onclick="closeModal('modal2')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeModal('modal2')">&times;</span>
+            <div class="modal-body">
+                <h2>เห็ดนางฟ้าภูฐาน</h2>
+                <p><strong>จุดเด่น:</strong> หวานนุ่มละมุนลิ้น เพาะง่าย โตไว เลี้ยงง่ายที่สุดในเซ็ต แคลอรี่ต่ำ</p>
+                <h4>📊 ข้อมูลโภชนาการ</h4>
+                <ul>
+                    <li><strong>โปรตีน:</strong> 2.9 - 3.3 g</li>
+                    <li><strong>คาร์โบไฮเดรต:</strong> 5.2 - 6.1 g</li>
+                    <li><strong>เส้นใยอาหาร:</strong> 2 g</li>
+                    <li><strong>โพแทสเซียม:</strong> 361 mg</li>
+                </ul>
+                <h4>💧 การดูแลและเก็บเกี่ยว</h4>
+                <ul>
+                    <li><strong>สถานที่:</strong> อากาศถ่ายเท ไม่ทึบอับ ใช้แสงแดดพอประมาณ อุณหภูมิ 20-25°C</li>
+                    <li><strong>The watering:</strong> พ่นละอองน้ำเช้า เย็น ก่อนนอน พ่นเฉพาะรอบๆ</li>
+                    <li><strong>การเก็บเกี่ยว:</strong> อายุ 7-10 วัน ดอกขยายเต็มที่ บิดเบาๆ ที่โคนดอก ไม่ต้องดึงแรง</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal3" class="modal" onclick="closeModal('modal3')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeModal('modal3')">&times;</span>
+            <div class="modal-body">
+                <h2>เห็ดแครง</h2>
+                <p><strong>จุดเด่น:</strong> เนื้อนุ่มหนึบหนับ โปรตีนสูงระดับ Superfood ชอบอากาศร้อนชื้น เก็บเกี่ยวได้คุ้มค่า</p>
+                <h4>📊 ข้อมูลโภชนาการ</h4>
+                <ul>
+                    <li><strong>โปรตีน:</strong> 17.0 g <span class="badge" style="background:#f1c40f; color:#000; padding:2px 5px; border-radius:3px;">สูงมากเมื่อเทียบกับเห็ดอื่น</span></li>
+                    <li><strong>ฟอสฟอรัส:</strong> 640 - 646 mg</li>
+                    <li><strong>ธาตุเหล็ก:</strong> 280 mg</li>
+                    <li><strong>แคลเซียม:</strong> 90 mg</li>
+                </ul>
+                <h4>💧 การดูแลและเก็บเกี่ยว</h4>
+                <ul>
+                    <li><strong>สถานที่:</strong> ชอบสภาพโรงเรือนที่ค่อนข้างทึบแสงและอบอ้าว หากลมโกรกแรงหน้าก้อนจะแห้งและฝ่อ</li>
+                    <li><strong>The watering:</strong> ชอบอากาศร้อนชื้น (30-35°C) รดน้ำ 1-3 วัน/ครั้ง</li>
+                    <li><strong>การเก็บเกี่ยว:</strong> ใช้มีดคมสะอาด กรีดหรือแซะโคนดอกให้หลุดจากหน้าก้อน</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal4" class="modal" onclick="closeModal('modal4')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeModal('modal4')">&times;</span>
+            <div class="modal-body">
+                <h2>เห็ดหูหนูดำ</h2>
+                <p><strong>จุดเด่น:</strong> กรุบกรอบ เคี้ยวเพลิน แคลอรีต่ำ ไฟเบอร์สูง สามารถเก็บรักษาในตู้เย็นได้นาน</p>
+                <h4>📊 ข้อมูลโภชนาการ</h4>
+                <ul>
+                    <li><strong>พลังงาน:</strong> 43 กิโลแคลอรี</li>
+                    <li><strong>โปรตีน:</strong> 1.4 g</li>
+                    <li><strong>เส้นใยอาหาร:</strong> 7 g <span class="badge" style="background:#f1c40f; color:#000; padding:2px 6px; border-radius:4px; font-size: 0.95rem;">กระตุ้นขับถ่าย ลดคอเลสเตอรอล</span></li>
+                    <li><strong>ธาตุเหล็ก:</strong> 6.1 mg</li>
+                </ul>
+                <h4>💧 การดูแลและเก็บเกี่ยว</h4>
+                <ul>
+                    <li><strong>สถานที่:</strong> อุณหภูมิ 25-30°C ต้องการแสงสว่างรำไร ห้ามโดนแดดจัดเด็ดขาด</li>
+                    <li><strong>การรดน้ำ:</strong> พ่นละอองน้ำวันละ 3-4 ครั้ง ชอบความชื้นสูง ห้ามน้ำขังเด็ดขาด</li>
+                    <li><strong>การเก็บเกี่ยว:</strong> ตัดชิดโคนก้อนเมื่อดอกบานเต็มที่</li>
+                    <li><strong>กระตุ้นรอบใหม่:</strong> งดรดน้ำ 1 วันหลังตัด เพื่อให้แผลแห้งสนิท ป้องกันรา</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const baseScores = {
+            1: [0.000, 1.000, 0.440, 0.373],
+            2: [0.000, 0.412, 1.000, 0.852],
+            3: [0.000, 1.000, 0.788, 0.688],
+            4: [0.000, 1.000, 0.793, 0.680],
+            5: [0.000, 1.000, 0.760, 0.630],
+            6: [0.000, 1.000, 0.890, 0.830]
+        };
+
+        const labels = ['เห็ดหูหนู', 'เห็ดแครง', 'เห็ดนางฟ้าภูฐาน', 'เห็ดนางรมฮังการี'];
+        const images = [
+            'https://api2.krua.co/wp-content/uploads/2020/06/ImageBannerMobile_960x633-327-scaled.jpg',
+            'https://f.ptcdn.info/545/083/000/sag26j103z5KPZfHnkB57-o.jpg',
+            'https://image.makewebeasy.net/makeweb/m_1920x0/VpofhVYKS/Farm/messageImage_1618034207531.jpg',
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0msmUXbDnvff6WfO7ATPvlMVxpJ1Uvy3wvDrlrpkBXA&s=10'
+        ];
+
+        const titles = [
+            '1. อัตราการเจริญเติบโตของเส้นใย', '2. ปริมาณผลผลิตรวม', '3. กำไรสุทธิ',
+            '4. ค่าอัตราส่วนผลตอบแทนต่อต้นทุน (BCR)', '5. ระยะเวลาการให้ผลผลิตครั้งแรก', '6. ระยะเวลาคืนทุน'
+        ];
+
+        const fixedWeights = [0.15, 0.25, 0.25, 0.15, 0.10, 0.10];
+        let customWeights = [0.15, 0.25, 0.25, 0.15, 0.10, 0.10];
+
+        let currentActiveTab = 1;
+        let staticChartObj = null;
+        let dynamicChartObj = null;
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'block';
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function updateWeights(event) {
+            let changedId = event ? event.target.id : null;
+            let total = 0;
+            let weightsData = [];
+
+            for (let i = 1; i <= 6; i++) {
+                let val = parseFloat(document.getElementById('w' + i).value);
+                weightsData.push({ id: 'w' + i, val: val, index: i });
+                total += val;
+            }
+
+            if (total > 1.0001 && changedId) {
+                let changedItem = weightsData.find(w => w.id === changedId);
+                let otherItems = weightsData.filter(w => w.id !== changedId);
+
+                let remainingAllowed = 1.00 - changedItem.val;
+                if (remainingAllowed < 0) {
+                    changedItem.val = 1.00;
+                    remainingAllowed = 0;
+                    document.getElementById(changedId).value = 1.00;
+                }
+
+                let sumOthers = otherItems.reduce((sum, w) => sum + w.val, 0);
+
+                if (sumOthers > 0) {
+                    otherItems.forEach(w => {
+                        let newVal = (w.val / sumOthers) * remainingAllowed;
+                        document.getElementById(w.id).value = newVal;
+                    });
+                }
+            }
+
+            for (let i = 1; i <= 6; i++) {
+                let finalVal = parseFloat(document.getElementById('w' + i).value);
+                customWeights[i - 1] = finalVal;
+                document.getElementById('val' + i).innerText = finalVal.toFixed(2);
+            }
+
+            refreshDynamicDisplay();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            refreshStaticDisplay();
+            refreshDynamicDisplay();
+        }
+
+        function applyQuickProfile(profile) {
+            let weights = [];
+            if (profile === 'standard') weights = [0.15, 0.25, 0.25, 0.15, 0.10, 0.10];
+            else if (profile === 'fast-rich') weights = [0.10, 0.35, 0.35, 0.10, 0.05, 0.05];
+            else if (profile === 'impatient') weights = [0.30, 0.10, 0.10, 0.10, 0.20, 0.20];
+            else if (profile === 'balanced') weights = [0.16, 0.17, 0.17, 0.17, 0.16, 0.17];
+
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById('w' + i).value = weights[i - 1];
+                customWeights[i - 1] = weights[i - 1];
+                document.getElementById('val' + i).innerText = weights[i - 1].toFixed(2);
+            }
+            refreshDynamicDisplay();
+        }
+
+        function vibrateDevice() {
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+        function playClickSound() {}
+        function playHapticOrSound() {
+            vibrateDevice();
+            playClickSound();
+        }
+
+        function initParticles() {
+            const canvas = document.getElementById('particleCanvas');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            for(let i=0; i<40; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 2 + 1,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = document.body.classList.contains('dark-mode') ? 'rgba(255, 255, 255, 0.3)' : 'rgba(76, 175, 80, 0.3)';
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                    if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+                    ctx.fill();
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            refreshStaticDisplay();
+            refreshDynamicDisplay();
+            initParticles();
+
+            if (window.innerWidth <= 992) {
+                const menuRow = document.querySelector('.nav-menus');
+                let scrollDirection = 1;
+                setInterval(() => {
+                    if (menuRow) {
+                        menuRow.scrollLeft += scrollDirection * 0.5;
+                        if (menuRow.scrollLeft >= (menuRow.scrollWidth - menuRow.clientWidth) || menuRow.scrollLeft <= 0) {
+                            scrollDirection *= -1;
+                        }
+                    }
+                }, 30);
+            }
+        });
+
+        let lastScrollY = window.scrollY;
+        window.addEventListener('scroll', () => {
+            const winY = window.scrollY;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = height > 0 ? (winY / height) * 100 : 0;
+            const pBar = document.getElementById('reading-progress');
+            if(pBar) pBar.style.height = scrolled + '%';
+
+            if (window.innerWidth <= 992) {
+                const nav = document.getElementById('stickyNav');
+                if (winY > lastScrollY && winY > 100) {
+                    nav.classList.add('nav-hidden-auto');
+                } else {
+                    nav.classList.remove('nav-hidden-auto');
+                }
+                lastScrollY = winY;
+            }
+        });
+
+        function switchTab(id) {
+            currentActiveTab = id;
+            const buttons = document.querySelectorAll('.chart-tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            if(buttons[id-1]) {
+                buttons[id-1].classList.add('active');
+            }
+
+            if(buttons[6]) {
+                if(id !== 7) {
+                    buttons[6].style.background = 'rgba(0, 0, 0, 0.03)';
+                    buttons[6].style.color = 'var(--text-sub)';
+                    buttons[6].style.borderColor = 'var(--glass-border)';
+                } else {
+                    if(document.body.classList.contains('dark-mode')) {
+                        buttons[6].style.background = 'linear-gradient(135deg, var(--accent), #cbd5e1)';
+                        buttons[6].style.color = '#090d16';
+                    } else {
+                        buttons[6].style.background = 'linear-gradient(135deg, var(--primary), var(--primary-dark))';
+                        buttons[6].style.color = '#ffffff';
+                    }
+                    buttons[6].style.borderColor = 'transparent';
+                }
+            }
+
+            refreshStaticDisplay();
+            refreshDynamicDisplay();
+            playClickSound();
+            vibrateDevice();
+        }
+
+        function getChartColors(isDark, baseColors) {
+            return {
+                bar: baseColors,
+                text: isDark ? '#ffffff' : '#1e293b',
+                grid: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'
+            };
+        }
+
+        function refreshStaticDisplay() {
+            const chartWrapper = document.getElementById('static-chart-wrapper');
+            const podiumWrapper = document.getElementById('static-podium-wrapper');
+            const descBox = document.getElementById('static-desc');
+
+            if (!chartWrapper || !podiumWrapper || !descBox) return;
+
+            if(currentActiveTab === 7) {
+                chartWrapper.style.display = 'none'; podiumWrapper.style.display = 'block';
+                renderPodium('static-podium', fixedWeights);
+                descBox.innerHTML = "💡 <strong>ภาพรวมมาตรฐาน (MPI):</strong> ใช้ค่าน้ำหนักตามแบบจำลอง MSSM ต้นฉบับ";
+            } else {
+                chartWrapper.style.display = 'block'; podiumWrapper.style.display = 'none';
+
+                const isDark = document.body.classList.contains('dark-mode');
+                const colors = getChartColors(isDark, isDark ? ['rgba(255,255,255,0.15)', '#00ff87', '#10b981', '#a7f3d0'] : ['rgba(0,0,0,0.05)', '#4caf50', '#81c784', '#c8e6c9']);
+                staticChartObj = renderBarChart('staticChart', staticChartObj, currentActiveTab, fixedWeights, colors);
+
+                descBox.innerHTML = "💡 <strong>ปัจจัย:</strong> " + titles[currentActiveTab-1] + " ";
+            }
+        }
+
+        function refreshDynamicDisplay() {
+            const chartWrapper = document.getElementById('dynamic-chart-wrapper');
+            const podiumWrapper = document.getElementById('dynamic-podium-wrapper');
+            const descBox = document.getElementById('dynamic-desc');
+
+            if (!chartWrapper || !podiumWrapper || !descBox) return;
+
+            if(currentActiveTab === 7) {
+                chartWrapper.style.display = 'none'; podiumWrapper.style.display = 'block';
+                renderPodium('dynamic-podium', customWeights);
+                descBox.innerHTML = "💡 <strong>ภาพรวมที่กำหนดเอง (MPI):</strong> คำนวณจากค่าน้ำหนักที่คุณเลื่อนแถบปรับแต่งไว้";
+            } else {
+                chartWrapper.style.display = 'block'; podiumWrapper.style.display = 'none';
+
+                const isDark = document.body.classList.contains('dark-mode');
+                const colors = getChartColors(isDark, isDark ? ['rgba(255,255,255,0.15)', '#ffffff', '#f1f5f9', '#cbd5e1'] : ['rgba(0,0,0,0.05)', '#388e3c', '#66bb6a', '#a5d6a7']);
+                dynamicChartObj = renderBarChart('dynamicChart', dynamicChartObj, currentActiveTab, customWeights, colors);
+
+                descBox.innerHTML = "💡 <strong>ปัจจัย:</strong> " + titles[currentActiveTab-1] + " (ปรับน้ำหนักตามที่คุณเลือก)";
+            }
+        }
+
+        function renderBarChart(canvasId, chartRef, factorId, weightsArr, colorsConf) {
+            const canvas = document.getElementById(canvasId);
+            if(!canvas) return chartRef;
+
+            const ctx = canvas.getContext('2d');
+            if(chartRef) chartRef.destroy();
+
+            Chart.defaults.font.family = "'Prompt', sans-serif";
+            Chart.defaults.font.size = 12;
+            Chart.defaults.color = colorsConf.text;
+
+            const weight = weightsArr[factorId-1];
+            const scores = [];
+            for (let m = 0; m < 4; m++) {
+                let val = baseScores[factorId][m];
+                if (isNaN(val) || val < 0) val = 0.000;
+                scores.push(val * weight);
+            }
+
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'ค่าดัชนี', data: scores,
+                        backgroundColor: colorsConf.bar, borderRadius: 8, barPercentage: 0.5
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }, title: { display: false },
+                        tooltip: { callbacks: { label: function(context) { return ' ค่าดัชนี: ' + context.parsed.y.toFixed(4); } } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true, max: 1.0,
+                            title: { display: true, text: 'ค่าดัชนีประสิทธิภาพเห็ด (MPT)', color: colorsConf.text },
+                            ticks: { stepSize: 0.2, color: colorsConf.text },
+                            grid: { color: colorsConf.grid }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: colorsConf.text }
+                        }
+                    },
+                    animation: { duration: 0 }
+                }
+            });
+        }
+
+        function renderPodium(wrapperId, weightsArr) {
+            const wrapper = document.getElementById(wrapperId);
+            if(!wrapper) return;
+
+            let mpiScores = [0, 0, 0, 0];
+            for (let i = 1; i <= 6; i++) {
+                let w = weightsArr[i-1];
+                for (let m = 0; m < 4; m++) {
+                    let val = baseScores[i][m];
+                    if (isNaN(val) || val < 0) val = 0.000;
+                    mpiScores[m] += (val * w);
+                }
+            }
+
+            let results = labels.map((name, idx) => ({
+                name: name, score: mpiScores[idx], img: images[idx]
+            }));
+            results.sort((a, b) => b.score - a.score);
+
+            const maxScore = results[0].score || 1;
+            const h1 = 70;
+            const h2 = Math.max(20, (results[1].score / maxScore) * h1);
+            const h3 = Math.max(20, (results[2].score / maxScore) * h1);
+            const h4 = Math.max(20, (results[3].score / maxScore) * h1);
+
+            const podiumHTML = `
+                <div class="podium-item">
+                    <img src="${results[1].img}" class="podium-img" alt="${results[1].name}">
+                    <div class="podium-step step-2" style="height: ${h2}px;">2</div>
+                    <div class="podium-label">${results[1].name}<span class="podium-score">${results[1].score.toFixed(3)}</span></div>
+                </div>
+                <div class="podium-item">
+                    <img src="${results[0].img}" class="podium-img" alt="${results[0].name}">
+                    <div class="podium-step step-1" style="height: ${h1}px;"><span style="font-size: 0.8rem; margin-top: -4px;">🏆</span><br>1</div>
+                    <div class="podium-label">${results[0].name}<span class="podium-score">${results[0].score.toFixed(3)}</span></div>
+                </div>
+                <div class="podium-item">
+                    <img src="${results[2].img}" class="podium-img" alt="${results[2].name}">
+                    <div class="podium-step step-3" style="height: ${h3}px;">3</div>
+                    <div class="podium-label">${results[2].name}<span class="podium-score">${results[2].score.toFixed(3)}</span></div>
+                </div>
+                <div class="podium-item">
+                    <img src="${results[3].img}" class="podium-img" alt="${results[3].name}">
+                    <div class="podium-step step-4" style="height: ${h4}px;">4</div>
+                    <div class="podium-label">${results[3].name}<span class="podium-score">${results[3].score.toFixed(3)}</span></div>
+                </div>
+            `;
+            wrapper.innerHTML = podiumHTML;
+        }
+    </script>
+</body>
+</html>
